@@ -92,35 +92,58 @@ func startGBLoop(gameboy *gb.Gameboy, monitor gb.IOBinding) {
 		frameTime = 1
 	}
 
-	ticker := time.NewTicker(frameTime)
-	start := time.Now()
-	frames := 0
+	var (
+		frameTicker      = time.NewTicker(frameTime)
+		lastStats        = time.Now()
+		lastStatsFrames  int
+		buttonProcessing time.Duration
+		gameboyUpdating  time.Duration
+		rendering        time.Duration
+		frames           int
+		cartName         string
+	)
 
-	var cartName string
 	if gameboy.IsGameLoaded() {
 		cartName = gameboy.Memory.Cart.GetName()
 	}
 
-	for range ticker.C {
-		if !monitor.IsRunning() {
-			return
-		}
+	// frames between logging
+	const logInterval = time.Second
 
+	for monitor.IsRunning() {
+
+		<-frameTicker.C
 		frames++
 
+		start := time.Now()
 		buttons := monitor.ButtonInput()
 		gameboy.ProcessInput(buttons)
+		buttonProcessing += time.Since(start)
 
+		start = time.Now()
 		_ = gameboy.Update()
+		gameboyUpdating += time.Since(start)
+
+		start = time.Now()
 		monitor.Render(&gameboy.PreparedData)
+		rendering += time.Since(start)
 
-		since := time.Since(start)
-		if since > time.Second {
-			start = time.Now()
+		if time.Since(lastStats) > logInterval {
+			log.Printf("buttonProcessing = %6d µs |  gameboyUpdating = %6d µs | rendering = %6d µs",
+				int(buttonProcessing/time.Microsecond),
+				int(gameboyUpdating/time.Microsecond),
+				int(rendering/time.Microsecond),
+			)
 
-			title := fmt.Sprintf("GoBoy - %s (FPS: %2v)", cartName, frames)
+			fps := int(float64(frames-lastStatsFrames) / logInterval.Seconds())
+			title := fmt.Sprintf("GoBoy - %s (FPS: %d)", cartName, fps)
 			monitor.SetTitle(title)
-			frames = 0
+
+			frames = lastStatsFrames
+			buttonProcessing = 0
+			gameboyUpdating = 0
+			rendering = 0
+			lastStats = time.Now()
 		}
 	}
 }
