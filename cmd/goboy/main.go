@@ -37,6 +37,7 @@ var (
 	vsyncOff    = flag.Bool("disableVsync", false, "set to disable vsync (debugging)")
 	stepThrough = flag.Bool("stepthrough", false, "step through opcodes (debugging)")
 	unlocked    = flag.Bool("unlocked", false, "if to unlock the cpu speed (debugging)")
+	logfps      = flag.Bool("logfps", false, "log fps stats every second (debugging)")
 )
 
 func main() {
@@ -129,15 +130,18 @@ func startGBLoop(gameboy *gb.Gameboy, monitor gb.IOBinding) {
 		rendering += time.Since(start)
 
 		if time.Since(lastStats) > logInterval {
-			log.Printf("buttonProcessing = %6d µs |  gameboyUpdating = %6d µs | rendering = %6d µs",
-				int(buttonProcessing/time.Microsecond),
-				int(gameboyUpdating/time.Microsecond),
-				int(rendering/time.Microsecond),
-			)
-
-			fps := int(float64(frames-lastStatsFrames) / logInterval.Seconds())
-			title := fmt.Sprintf("GoBoy - %s (FPS: %d)", cartName, fps)
+			fps := float64(frames-lastStatsFrames) / logInterval.Seconds()
+			title := fmt.Sprintf("GoBoy - %s (FPS: %d)", cartName, int(fps))
 			monitor.SetTitle(title)
+
+			if *logfps {
+				log.Printf("| %4d fps | buttonProcessing = %6d µs/frame | gameboyUpdating = %6d µs/frame | rendering = %6d µs/frame",
+					int(fps),
+					int((1000000*buttonProcessing.Seconds())/fps),
+					int((1000000*gameboyUpdating.Seconds())/fps),
+					int((1000000*rendering.Seconds())/fps),
+				)
+			}
 
 			frames = lastStatsFrames
 			buttonProcessing = 0
