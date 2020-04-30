@@ -83,7 +83,7 @@ func start() {
 
 	// Create the monitor for pixels
 	enableVSync := !(*vsyncOff || *unlocked)
-	monitor := io.NewPixelsIOBinding(enableVSync, gameboy)
+	monitor := io.NewPixelsIOBinding(enableVSync)
 	startGBLoop(gameboy, monitor)
 }
 

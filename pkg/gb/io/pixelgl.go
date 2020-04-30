@@ -21,7 +21,7 @@ type PixelsIOBinding struct {
 }
 
 // NewPixelsIOBinding returns a new Pixelsgl IOBinding
-func NewPixelsIOBinding(enableVSync bool, gameboy *gb.Gameboy) *PixelsIOBinding {
+func NewPixelsIOBinding(enableVSync bool) *PixelsIOBinding {
 	windowConfig := pixelgl.WindowConfig{
 		Title: "GoBoy",
 		Bounds: pixel.R(
@@ -62,7 +62,7 @@ func (mon *PixelsIOBinding) updateCamera() {
 	yScale := mon.window.Bounds().H() / 144
 	scale := math.Min(yScale, xScale)
 
-	shift := mon.window.Bounds().Size().Scaled(0.5).Sub(pixel.ZV)
+	shift := mon.window.Bounds().Size().Scaled(0.5)
 	cam := pixel.IM.Scaled(pixel.ZV, scale).ScaledXY(pixel.ZV, pixel.Vec{X: 1, Y: -1}).Moved(shift)
 	mon.window.SetMatrix(cam)
 }
@@ -90,7 +90,7 @@ func (mon *PixelsIOBinding) Render(screen *[gb.ScreenHeight][gb.ScreenWidth][3]u
 	bg := color.RGBA{R: r, G: g, B: b, A: 0xFF}
 	mon.window.Clear(bg)
 
-	spr := pixel.NewSprite(pixel.Picture(mon.picture), pixel.R(0, 0, gb.ScreenWidth, gb.ScreenHeight))
+	spr := pixel.NewSprite(mon.picture, pixel.R(0, 0, gb.ScreenWidth, gb.ScreenHeight))
 	spr.Draw(mon.window, pixel.IM)
 
 	mon.updateCamera()
