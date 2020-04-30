@@ -63,7 +63,7 @@ func (mon *PixelsIOBinding) updateCamera() {
 	scale := math.Min(yScale, xScale)
 
 	shift := mon.window.Bounds().Size().Scaled(0.5).Sub(pixel.ZV)
-	cam := pixel.IM.Scaled(pixel.ZV, scale).Moved(shift)
+	cam := pixel.IM.Scaled(pixel.ZV, scale).ScaledXY(pixel.ZV, pixel.Vec{X: 1, Y: -1}).Moved(shift)
 	mon.window.SetMatrix(cam)
 }
 
@@ -77,7 +77,7 @@ func (mon *PixelsIOBinding) IsRunning() bool {
 func (mon *PixelsIOBinding) Render(screen *[gb.ScreenHeight][gb.ScreenWidth][3]uint8) {
 	for y := 0; y < gb.ScreenHeight; y++ {
 		for x := 0; x < gb.ScreenWidth; x++ {
-			mon.picture.Pix[(gb.ScreenHeight-1-y)*gb.ScreenWidth+x] = color.RGBA{
+			mon.picture.Pix[y*gb.ScreenWidth+x] = color.RGBA{
 				R: screen[y][x][0],
 				G: screen[y][x][1],
 				B: screen[y][x][2],
