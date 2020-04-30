@@ -2,6 +2,7 @@ package gb
 
 import (
 	"fmt"
+	"image/color"
 
 	"github.com/Humpheh/goboy/pkg/apu"
 	"github.com/Humpheh/goboy/pkg/bits"
@@ -32,7 +33,7 @@ type Gameboy struct {
 
 	// Matrix of pixel data which is used while the screen is rendering. When a
 	// frame has been completed, this data is copied into the PreparedData matrix.
-	screenData [ScreenHeight][ScreenWidth][3]uint8
+	screenData [ScreenHeight][ScreenWidth]color.RGBA
 	bgPriority [ScreenHeight][ScreenWidth]bool
 
 	// Track colour of tiles in scanline for priority management.
@@ -42,7 +43,7 @@ type Gameboy struct {
 
 	// PreparedData is a matrix of screen pixel data for a single frame which has
 	// been fully rendered.
-	PreparedData [ScreenHeight][ScreenWidth][3]uint8
+	PreparedData [ScreenHeight][ScreenWidth]color.RGBA
 
 	interruptsEnabling bool
 	interruptsOn       bool

@@ -1,6 +1,8 @@
 package gb
 
 import (
+	"image/color"
+
 	"github.com/Humpheh/goboy/pkg/bits"
 )
 
@@ -28,7 +30,7 @@ func (gb *Gameboy) updateGraphics(cycles int) {
 		gb.Memory.HighRAM[0x44]++
 		if gb.Memory.HighRAM[0x44] > 153 {
 			gb.PreparedData = gb.screenData
-			gb.screenData = [ScreenHeight][ScreenWidth][3]uint8{}
+			gb.screenData = [ScreenHeight][ScreenWidth]color.RGBA{}
 			gb.bgPriority = [ScreenHeight][ScreenWidth]bool{}
 			gb.Memory.HighRAM[0x44] = 0
 		}
@@ -395,9 +397,7 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 func (gb *Gameboy) setPixel(x byte, y byte, r uint8, g uint8, b uint8, priority bool) {
 	// If priority is false then sprite pixel is only set if tile colour is 0
 	if (priority && !gb.bgPriority[y][x]) || gb.tileScanline[x] == 0 {
-		gb.screenData[y][x][0] = r
-		gb.screenData[y][x][1] = g
-		gb.screenData[y][x][2] = b
+		gb.screenData[y][x] = color.RGBA{R: r, G: g, B: b, A: 0xff}
 	}
 }
 
@@ -411,9 +411,7 @@ func (gb *Gameboy) clearScreen() {
 	// Set every pixel to white
 	for y := 0; y < len(gb.screenData); y++ {
 		for x := 0; x < len(gb.screenData[y]); x++ {
-			gb.screenData[y][x][0] = 255
-			gb.screenData[y][x][1] = 255
-			gb.screenData[y][x][2] = 255
+			gb.screenData[y][x] = color.RGBA{R: 0xff, G: 0xff, B: 0xff, A: 0xff}
 		}
 	}
 
