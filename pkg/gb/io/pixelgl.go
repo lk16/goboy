@@ -74,12 +74,9 @@ func (mon *PixelsIOBinding) IsRunning() bool {
 }
 
 // Render renders the pixels on the screen.
-func (mon *PixelsIOBinding) Render(screen *[gb.ScreenHeight][gb.ScreenWidth]color.RGBA) {
-	for y := 0; y < gb.ScreenHeight; y++ {
-		for x := 0; x < gb.ScreenWidth; x++ {
-			mon.picture.Pix[y*gb.ScreenWidth+x] = screen[y][x]
-		}
-	}
+func (mon *PixelsIOBinding) Render(frame *gb.Frame) {
+
+	mon.picture.Pix = frame[:]
 
 	r, g, b := gb.GetPaletteColour(3)
 	bg := color.RGBA{R: r, G: g, B: b, A: 0xFF}
