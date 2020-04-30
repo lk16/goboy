@@ -46,9 +46,9 @@ func TestSpritePriority(t *testing.T) {
 	}
 
 	// Iterate over the image and assert each pixel matches the expected image
-	for x := 0; x < ScreenWidth; x++ {
-		for y := 0; y < ScreenHeight; y++ {
-			actual := gb.PreparedData[x][y]
+	for y := 0; y < ScreenHeight; y++ {
+		for x := 0; x < ScreenWidth; x++ {
+			actual := gb.PreparedData[y][x]
 			expected, ok := imageMap[img.At(x, y)]
 			require.True(t, ok, "unexpected colour in expected image: %v", img.At(x, y))
 			require.Equal(t, expected, actual[0], "incorrect pixel at X:%v Y:%x", x, y)

@@ -74,12 +74,15 @@ func (mon *PixelsIOBinding) IsRunning() bool {
 }
 
 // Render renders the pixels on the screen.
-func (mon *PixelsIOBinding) Render(screen *[160][144][3]uint8) {
+func (mon *PixelsIOBinding) Render(screen *[gb.ScreenHeight][gb.ScreenWidth][3]uint8) {
 	for y := 0; y < gb.ScreenHeight; y++ {
 		for x := 0; x < gb.ScreenWidth; x++ {
-			col := screen[x][y]
-			rgb := color.RGBA{R: col[0], G: col[1], B: col[2], A: 0xFF}
-			mon.picture.Pix[(gb.ScreenHeight-1-y)*gb.ScreenWidth+x] = rgb
+			mon.picture.Pix[(gb.ScreenHeight-1-y)*gb.ScreenWidth+x] = color.RGBA{
+				R: screen[y][x][0],
+				G: screen[y][x][1],
+				B: screen[y][x][2],
+				A: 0xFF,
+			}
 		}
 	}
 
