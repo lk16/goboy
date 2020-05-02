@@ -18,11 +18,11 @@ func TestSpritePriority(t *testing.T) {
 	const maxPPUIterations = 10
 
 	// Override the palette with the colours in the expected image
-	Palettes[CurrentPalette] = [][]byte{
-		{3, 3, 3},
-		{2, 2, 3},
-		{1, 1, 1}, // not used in expected image
-		{0, 0, 0},
+	Palettes[CurrentPalette] = []color.RGBA{
+		color.RGBA{R: 3, G: 3, B: 3, A: 0xFF},
+		color.RGBA{R: 2, G: 2, B: 3, A: 0xFF},
+		color.RGBA{R: 1, G: 1, B: 1, A: 0xFF}, // not used in expected image
+		color.RGBA{R: 0, G: 0, B: 0, A: 0xFF},
 	}
 
 	// Map of colours in the image to color in the palette
