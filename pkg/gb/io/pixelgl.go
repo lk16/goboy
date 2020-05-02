@@ -78,9 +78,8 @@ func (mon *PixelsIOBinding) Render(frame *gb.Frame) {
 
 	mon.picture.Pix = frame[:]
 
-	r, g, b := gb.GetPaletteColour(3)
-	bg := color.RGBA{R: r, G: g, B: b, A: 0xFF}
-	mon.window.Clear(bg)
+	rgba := gb.GetPaletteColour(3)
+	mon.window.Clear(rgba)
 
 	spr := pixel.NewSprite(mon.picture, pixel.R(0, 0, gb.ScreenWidth, gb.ScreenHeight))
 	spr.Draw(mon.window, pixel.IM)

@@ -1,6 +1,8 @@
 package gb
 
 import (
+	"image/color"
+
 	"github.com/Humpheh/goboy/pkg/bits"
 )
 
@@ -19,35 +21,34 @@ var CurrentPalette = PaletteBGB
 
 // Palettes is an mapping from colour palettes to their colour values
 // to be used by the emulator.
-var Palettes = [][][]byte{
+var Palettes = [][]color.RGBA{
 	// PaletteGreyscale
 	{
-		{0xFF, 0xFF, 0xFF},
-		{0xCC, 0xCC, 0xCC},
-		{0x77, 0x77, 0x77},
-		{0x00, 0x00, 0x00},
+		color.RGBA{R: 0xFF, G: 0xFF, B: 0xFF, A: 0xFF},
+		color.RGBA{R: 0xCC, G: 0xCC, B: 0xCC, A: 0xFF},
+		color.RGBA{R: 0x77, G: 0x77, B: 0x77, A: 0xFF},
+		color.RGBA{R: 0x00, G: 0x00, B: 0x00, A: 0xFF},
 	},
 	// PaletteOriginal
 	{
-		{0x9B, 0xBC, 0x0F},
-		{0x8B, 0xAC, 0x0F},
-		{0x30, 0x62, 0x30},
-		{0x0F, 0x38, 0x0F},
+		color.RGBA{R: 0x9B, G: 0xBC, B: 0x0F, A: 0xFF},
+		color.RGBA{R: 0x8B, G: 0xAC, B: 0x0F, A: 0xFF},
+		color.RGBA{R: 0x30, G: 0x62, B: 0x30, A: 0xFF},
+		color.RGBA{R: 0x0F, G: 0x38, B: 0x0F, A: 0xFF},
 	},
 	// PaletteBGB
 	{
-		{0xE0, 0xF8, 0xD0},
-		{0x88, 0xC0, 0x70},
-		{0x34, 0x68, 0x56},
-		{0x08, 0x18, 0x20},
+		color.RGBA{R: 0xE0, G: 0xF8, B: 0xD0, A: 0xFF},
+		color.RGBA{R: 0x88, G: 0xC0, B: 0x70, A: 0xFF},
+		color.RGBA{R: 0x34, G: 0x68, B: 0x56, A: 0xFF},
+		color.RGBA{R: 0x08, G: 0x18, B: 0x20, A: 0xFF},
 	},
 }
 
 // GetPaletteColour returns the colour based on the colour index and the currently
 // selected palette.
-func GetPaletteColour(index byte) (uint8, uint8, uint8) {
-	col := Palettes[CurrentPalette][index]
-	return col[0], col[1], col[2]
+func GetPaletteColour(index byte) color.RGBA {
+	return Palettes[CurrentPalette][index]
 }
 
 // NewPalette makes a new CGB colour palette.
@@ -99,14 +100,16 @@ func (pal *cgbPalette) write(value byte) {
 	}
 }
 
-// Get the rgb colour for a palette at a colour number.
-func (pal *cgbPalette) get(palette byte, num byte) (uint8, uint8, uint8) {
+// Get the rgba colour for a palette at a colour number.
+func (pal *cgbPalette) get(palette byte, num byte) color.RGBA {
 	idx := (palette * 8) + (num * 2)
 	colour := uint16(pal.Palette[idx]) | uint16(pal.Palette[idx+1])<<8
-	r := uint8(colour & 0x1F)
-	g := uint8((colour >> 5) & 0x1F)
-	b := uint8((colour >> 10) & 0x1F)
-	return colArr[r], colArr[g], colArr[b]
+
+	r := colour & 0x1F
+	g := (colour >> 5) & 0x1F
+	b := (colour >> 10) & 0x1F
+
+	return color.RGBA{R: colArr[r], G: colArr[g], B: colArr[b], A: 0xFF}
 }
 
 // Mapping of the 5 bit colour value to a 8 bit value.

@@ -270,12 +270,12 @@ func (gb *Gameboy) setTilePixel(x, y, tileAttr, colourNum, palette byte, priorit
 	// Set the pixel
 	if gb.IsCGB() {
 		cgbPalette := tileAttr & 0x7
-		red, green, blue := gb.BGPalette.get(cgbPalette, colourNum)
-		gb.setPixel(int(x), int(y), red, green, blue, true)
+		rgba := gb.BGPalette.get(cgbPalette, colourNum)
+		gb.setPixel(int(x), int(y), rgba, true)
 		gb.bgPriority[y][x] = priority
 	} else {
-		red, green, blue := gb.getColour(colourNum, palette)
-		gb.setPixel(int(x), int(y), red, green, blue, true)
+		rgba := gb.getColour(colourNum, palette)
+		gb.setPixel(int(x), int(y), rgba, true)
 	}
 
 	// Store for the current scanline so sprite priority can be managed
@@ -283,7 +283,7 @@ func (gb *Gameboy) setTilePixel(x, y, tileAttr, colourNum, palette byte, priorit
 }
 
 // Get the RGB colour value for a colour num at an address using the current palette.
-func (gb *Gameboy) getColour(colourNum byte, palette byte) (uint8, uint8, uint8) {
+func (gb *Gameboy) getColour(colourNum byte, palette byte) color.RGBA {
 	hi := colourNum<<1 | 1
 	lo := colourNum << 1
 	col := (bits.Val(palette, hi) << 1) | bits.Val(palette, lo)
@@ -377,16 +377,16 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 
 			if gb.IsCGB() {
 				cgbPalette := attributes & 0x7
-				red, green, blue := gb.SpritePalette.get(cgbPalette, colourNum)
-				gb.setPixel(int(pixel), int(scanline), red, green, blue, priority)
+				rgba := gb.SpritePalette.get(cgbPalette, colourNum)
+				gb.setPixel(int(pixel), int(scanline), rgba, priority)
 			} else {
 				// Determine the colour palette to use
 				var palette = palette1
 				if bits.Test(attributes, 4) {
 					palette = palette2
 				}
-				red, green, blue := gb.getColour(colourNum, palette)
-				gb.setPixel(int(pixel), int(scanline), red, green, blue, priority)
+				rgba := gb.getColour(colourNum, palette)
+				gb.setPixel(int(pixel), int(scanline), rgba, priority)
 			}
 
 			// Store the xpos of the sprite for this pixel for priority resolution
@@ -396,10 +396,10 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 }
 
 // Set a pixel in the graphics screen data.
-func (gb *Gameboy) setPixel(x, y int, r uint8, g uint8, b uint8, priority bool) {
+func (gb *Gameboy) setPixel(x, y int, rgba color.RGBA, priority bool) {
 	// If priority is false then sprite pixel is only set if tile colour is 0
 	if (priority && !gb.bgPriority[y][x]) || gb.tileScanline[x] == 0 {
-		gb.screenData[y*ScreenWidth+x] = color.RGBA{R: r, G: g, B: b, A: 0xff}
+		gb.screenData[y*ScreenWidth+x] = rgba
 	}
 }
 
