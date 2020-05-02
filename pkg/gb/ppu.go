@@ -33,7 +33,7 @@ func (gb *Gameboy) updateGraphics(cycles int) {
 		if gb.Memory.HighRAM[0x44] > 153 {
 			gb.PreparedData = gb.screenData
 			gb.screenData = Frame{}
-			gb.bgPriority = [ScreenHeight][ScreenWidth]bool{}
+			gb.bgPriority = [ScreenHeight * ScreenWidth]bool{}
 			gb.Memory.HighRAM[0x44] = 0
 		}
 
@@ -96,7 +96,7 @@ func (gb *Gameboy) setLCDStatus() {
 			// Draw the scanline when we start mode 3. In the real GameBoy
 			// this would be done throughout mode 3 by reading OAM and VRAM
 			// to generate the picture.
-			gb.drawScanline(currentLine)
+			gb.drawScanline(int(currentLine))
 		}
 	default:
 		mode = 0
@@ -132,7 +132,7 @@ func (gb *Gameboy) isLCDEnabled() bool {
 }
 
 // Draw a single scanline to the graphics output.
-func (gb *Gameboy) drawScanline(scanline byte) {
+func (gb *Gameboy) drawScanline(scanline int) {
 	control := gb.Memory.ReadHighRam(LCDC)
 
 	// LCDC bit 0 clears tiles on DMG but controls priority on CGB.
@@ -181,7 +181,7 @@ func (gb *Gameboy) getTileSettings(lcdControl byte, windowY byte) (
 
 // Render a scanline of the tile map to the graphics output based
 // on the state of the lcdControl register.
-func (gb *Gameboy) renderTiles(lcdControl byte, scanline byte) {
+func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 	scrollY := gb.Memory.ReadHighRam(0xFF42)
 	scrollX := gb.Memory.ReadHighRam(0xFF43)
 	windowY := gb.Memory.ReadHighRam(0xFF4A)
@@ -192,9 +192,9 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline byte) {
 	// yPos is used to calc which of 32 v-lines the current scanline is drawing
 	var yPos byte
 	if !usingWindow {
-		yPos = scrollY + scanline
+		yPos = scrollY + byte(scanline)
 	} else {
-		yPos = scanline - windowY
+		yPos = byte(scanline) - windowY
 	}
 
 	// which of the 8 vertical pixels of the current tile is the scanline on?
@@ -205,12 +205,12 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline byte) {
 
 	// start drawing the 160 horizontal pixels for this scanline
 	gb.tileScanline = [160]uint8{}
-	for pixel := byte(0); pixel < 160; pixel++ {
-		xPos := pixel + scrollX
+	for pixel := 0; pixel < 160; pixel++ {
+		xPos := byte(pixel) + scrollX
 
 		// Translate the current x pos to window space if necessary
-		if usingWindow && pixel >= windowX {
-			xPos = pixel - windowX
+		if usingWindow && byte(pixel) >= windowX {
+			xPos = byte(pixel) - windowX
 		}
 
 		// Which of the 32 horizontal tiles does this x_pox fall within?
@@ -266,16 +266,19 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline byte) {
 	}
 }
 
-func (gb *Gameboy) setTilePixel(x, y, tileAttr, colourNum, palette byte, priority bool) {
+func (gb *Gameboy) setTilePixel(x, y int, tileAttr, colourNum, palette byte, priority bool) {
+
+	pixelIndex := y*ScreenWidth + x
+
 	// Set the pixel
 	if gb.IsCGB() {
 		cgbPalette := tileAttr & 0x7
 		rgba := gb.BGPalette.get(cgbPalette, colourNum)
-		gb.setPixel(int(x), int(y), rgba, true)
-		gb.bgPriority[y][x] = priority
+		gb.setPixel(pixelIndex, rgba, true)
+		gb.bgPriority[pixelIndex] = priority
 	} else {
 		rgba := gb.getColour(colourNum, palette)
-		gb.setPixel(int(x), int(y), rgba, true)
+		gb.setPixel(pixelIndex, rgba, true)
 	}
 
 	// Store for the current scanline so sprite priority can be managed
@@ -378,7 +381,7 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 			if gb.IsCGB() {
 				cgbPalette := attributes & 0x7
 				rgba := gb.SpritePalette.get(cgbPalette, colourNum)
-				gb.setPixel(int(pixel), int(scanline), rgba, priority)
+				gb.setPixel((ScreenWidth*int(scanline))+int(pixel), rgba, priority)
 			} else {
 				// Determine the colour palette to use
 				var palette = palette1
@@ -386,7 +389,7 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 					palette = palette2
 				}
 				rgba := gb.getColour(colourNum, palette)
-				gb.setPixel(int(pixel), int(scanline), rgba, priority)
+				gb.setPixel((ScreenWidth*int(scanline))+int(pixel), rgba, priority)
 			}
 
 			// Store the xpos of the sprite for this pixel for priority resolution
@@ -396,10 +399,10 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 }
 
 // Set a pixel in the graphics screen data.
-func (gb *Gameboy) setPixel(x, y int, rgba color.RGBA, priority bool) {
+func (gb *Gameboy) setPixel(pixelIndex int, rgba color.RGBA, priority bool) {
 	// If priority is false then sprite pixel is only set if tile colour is 0
-	if (priority && !gb.bgPriority[y][x]) || gb.tileScanline[x] == 0 {
-		gb.screenData[y*ScreenWidth+x] = rgba
+	if (priority && !gb.bgPriority[pixelIndex]) || gb.tileScanline[pixelIndex%ScreenWidth] == 0 {
+		gb.screenData[pixelIndex] = rgba
 	}
 }
 
