@@ -311,11 +311,75 @@ func (mem *Memory) Read(address uint16) byte {
 // ReadHighRam reads from 0xFF00-0xFFFF in the memory address space. The range
 // includes both HRAM and the hardware registers.
 func (mem *Memory) ReadHighRam(address uint16) byte {
-	switch {
-	// Joypad address
-	case address == 0xFF00:
-		return mem.gb.joypadValue(mem.HighRAM[0x00])
 
+	highByte := byte(address & 0xFF)
+
+	if highByte&0x80 != 0 {
+		return mem.HighRAM[highByte]
+	}
+
+	switch highByte {
+	case 0x00:
+		return mem.gb.joypadValue(mem.HighRAM[0x00])
+	case 0x04:
+		fallthrough
+	case 0x07:
+		return mem.HighRAM[highByte]
+	case 0x0F:
+		return mem.HighRAM[0x0F] | 0xE0
+	case 0x40:
+		fallthrough
+	case 0x41:
+		fallthrough
+	case 0x42:
+		fallthrough
+	case 0x43:
+		fallthrough
+	case 0x44:
+		fallthrough
+	case 0x45:
+		fallthrough
+	case 0x46:
+		fallthrough
+	case 0x47:
+		fallthrough
+	case 0x48:
+		fallthrough
+	case 0x49:
+		fallthrough
+	case 0x4A:
+		fallthrough
+	case 0x4B:
+		return mem.HighRAM[highByte]
+	case 0x4D:
+		return mem.gb.currentSpeed<<7 | bits.B(mem.gb.prepareSpeed)
+	case 0x4F:
+		return mem.VRAMBank
+	case 0x68: // BG palette index
+		if mem.gb.IsCGB() {
+			return mem.gb.BGPalette.readIndex()
+		}
+		return 0
+	case 0x69: // BG Palette data
+		if mem.gb.IsCGB() {
+			return mem.gb.BGPalette.read()
+		}
+		return 0
+	case 0x6A: // Sprite palette index
+		if mem.gb.IsCGB() {
+			return mem.gb.SpritePalette.readIndex()
+		}
+		return 0
+	case 0x6B: // Sprite Palette data
+		if mem.gb.IsCGB() {
+			return mem.gb.SpritePalette.read()
+		}
+		return 0
+	case 0x70:
+		return mem.WRAMBank
+	}
+
+	switch {
 	case address >= 0xFF10 && address <= 0xFF26:
 		return mem.gb.Sound.Read(address)
 
@@ -323,50 +387,9 @@ func (mem *Memory) ReadHighRam(address uint16) byte {
 		// Writing to channel 3 waveform RAM.
 		return mem.gb.Sound.Read(address)
 
-	case address == 0xFF0F:
-		return mem.HighRAM[0x0F] | 0xE0
-
 	case address >= 0xFF72 && address <= 0xFF77:
 		//log.Print("read from ", address)
 		return 0
-
-	case address == 0xFF68:
-		// BG palette index
-		if mem.gb.IsCGB() {
-			return mem.gb.BGPalette.readIndex()
-		}
-		return 0
-
-	case address == 0xFF69:
-		// BG Palette data
-		if mem.gb.IsCGB() {
-			return mem.gb.BGPalette.read()
-		}
-		return 0
-
-	case address == 0xFF6A:
-		// Sprite palette index
-		if mem.gb.IsCGB() {
-			return mem.gb.SpritePalette.readIndex()
-		}
-		return 0
-
-	case address == 0xFF6B:
-		// Sprite Palette data
-		if mem.gb.IsCGB() {
-			return mem.gb.SpritePalette.read()
-		}
-		return 0
-
-	case address == 0xFF4D:
-		// Speed switch data
-		return mem.gb.currentSpeed<<7 | bits.B(mem.gb.prepareSpeed)
-
-	case address == 0xFF4F:
-		return mem.VRAMBank
-
-	case address == 0xFF70:
-		return mem.WRAMBank
 
 	default:
 		return mem.HighRAM[address-0xFF00]
