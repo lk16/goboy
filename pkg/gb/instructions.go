@@ -42,9 +42,9 @@ var CBOpcodeCycles = []int{
 	2, 2, 2, 2, 2, 2, 4, 2, 2, 2, 2, 2, 2, 2, 4, 2, // F
 } //0  1  2  3  4  5  6  7  8  9  a  b  c  d  e  f
 
-// ExecuteNextOpcode gets the value at the current PC address, increments the PC,
+// executeNextOpcode gets the value at the current PC address, increments the PC,
 // updates the CPU ticks and executes the opcode.
-func (gb *Gameboy) ExecuteNextOpcode() int {
+func (gb *Gameboy) executeNextOpcode() int {
 	opcode := int(gb.popPC())
 	gb.thisCpuTicks = OpcodeCycles[opcode] * 4
 	gb.executeInstruction(opcode)

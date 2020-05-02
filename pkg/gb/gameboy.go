@@ -81,7 +81,7 @@ func (gb *Gameboy) Update() int {
 			if gb.Debug.OutputOpcodes {
 				LogOpcode(gb, false)
 			}
-			cyclesOp = gb.ExecuteNextOpcode()
+			cyclesOp = gb.executeNextOpcode()
 		} else {
 			// TODO: This is incorrect
 		}

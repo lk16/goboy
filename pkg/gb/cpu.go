@@ -30,7 +30,6 @@ func (reg *register) HiLo() uint16 {
 // SetHi sets the higher byte of the register.
 func (reg *register) SetHi(val byte) {
 	reg.value = uint(val)<<8 | (reg.value & 0xFF)
-	reg.updateMask()
 }
 
 // SetLog sets the lower byte of the register.
@@ -47,9 +46,7 @@ func (reg *register) Set(val uint16) {
 
 // Mask the value if one is set on this register.
 func (reg *register) updateMask() {
-	if reg.mask != 0 {
-		reg.value &= reg.mask
-	}
+	reg.value &= reg.mask
 }
 
 // CPU contains the registers used for program execution and
@@ -80,6 +77,10 @@ func (cpu *CPU) Init(cgb bool) {
 	cpu.SP.Set(0xFFFE)
 
 	cpu.AF.mask = 0xFFF0
+	cpu.BC.mask = 0xFFFF
+	cpu.DE.mask = 0xFFFF
+	cpu.HL.mask = 0xFFFF
+	cpu.SP.mask = 0xFFFF
 }
 
 // Internally set the value of a flag on the flag register.
