@@ -1,5 +1,7 @@
 package gb
 
+import "log"
+
 // OpcodeCycles is the number of cpu cycles for each normal opcode.
 var OpcodeCycles = []int{
 	1, 3, 2, 2, 1, 1, 2, 1, 5, 2, 2, 2, 1, 1, 2, 1, // 0
@@ -975,6 +977,8 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		nextInst := gb.popPC()
 		gb.thisCpuTicks += CBOpcodeCycles[nextInst] * 4
 		gb.cbInst[nextInst]()
+	default:
+		log.Panicf("unknown opcode 0x%x", opcode)
 	}
 }
 
