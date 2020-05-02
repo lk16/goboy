@@ -87,7 +87,11 @@ func (gb *Gameboy) Update() int {
 			// TODO: This is incorrect
 		}
 		cycles += cyclesOp
-		gb.updateGraphics(cyclesOp)
+
+		if gb.options.graphics {
+			gb.updateGraphics(cyclesOp)
+		}
+
 		gb.updateTimers(cyclesOp)
 		cycles += gb.doInterrupts()
 
@@ -352,7 +356,10 @@ func (gb *Gameboy) setup() {
 // NewGameboy returns a new Gameboy instance.
 func NewGameboy(romFile string, opts ...GameboyOption) (*Gameboy, error) {
 	// Build the gameboy
-	gameboy := Gameboy{}
+	gameboy := Gameboy{
+		options: gameboyOptions{graphics: true},
+	}
+
 	for _, opt := range opts {
 		opt(&gameboy.options)
 	}

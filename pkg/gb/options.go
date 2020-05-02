@@ -4,8 +4,9 @@ package gb
 type GameboyOption func(o *gameboyOptions)
 
 type gameboyOptions struct {
-	sound   bool
-	cgbMode bool
+	sound    bool
+	cgbMode  bool
+	graphics bool
 
 	// Callback when the serial port is written to
 	transferFunction func(byte)
@@ -48,6 +49,13 @@ func WithCGBEnabled() GameboyOption {
 func WithSound() GameboyOption {
 	return func(o *gameboyOptions) {
 		o.sound = true
+	}
+}
+
+// WithSound runs the Gameboy with sound output.
+func WithoutGraphics() GameboyOption {
+	return func(o *gameboyOptions) {
+		o.graphics = false
 	}
 }
 

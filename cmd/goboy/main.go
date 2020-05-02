@@ -41,6 +41,7 @@ var (
 	unlocked     = flag.Bool("unlocked", false, "if to unlock the cpu speed (debugging)")
 	logfps       = flag.Bool("logfps", false, "log fps stats every second (debugging)")
 	frontendName = flag.String("frontend", "pixelgl", "select frontend")
+	noGraphics   = flag.Bool("nographics", false, "do not compute graphics")
 )
 
 func main() {
@@ -73,6 +74,9 @@ func start() {
 	}
 	if !*mute {
 		opts = append(opts, gb.WithSound())
+	}
+	if *noGraphics {
+		opts = append(opts, gb.WithoutGraphics())
 	}
 
 	// Initialise the GameBoy with the flag options
