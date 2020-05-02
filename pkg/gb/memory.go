@@ -265,29 +265,48 @@ func (mem *Memory) Write(address uint16, value byte) {
 // Read from memory. Will go and read from cartridge memory if the
 // requested address is mapped to that space.
 func (mem *Memory) Read(address uint16) byte {
-	switch {
-	case address < 0x8000:
+
+	highNibble := address >> 12
+
+	switch highNibble {
+	case 0x0:
+		fallthrough
+	case 0x1:
+		fallthrough
+	case 0x2:
+		fallthrough
+	case 0x3:
+		fallthrough
+	case 0x4:
+		fallthrough
+	case 0x5:
+		fallthrough
+	case 0x6:
+		fallthrough
+	case 0x7:
 		// Cartridge ROM
 		return mem.Cart.Read(address)
-
-	case address < 0xA000:
+	case 0x8:
+		fallthrough
+	case 0x9:
 		// VRAM Banking
 		// TODO: check this is correct
 		bankOffset := uint16(mem.VRAMBank) * 0x2000
 		return mem.VRAM[address-0x8000+bankOffset]
-
-	case address < 0xC000:
+	case 0xA:
+		fallthrough
+	case 0xB:
 		// Cartridge RAM
 		return mem.Cart.Read(address)
-
-	case address < 0xD000:
+	case 0xC:
 		// Internal RAM - Bank 0
 		return mem.WRAM[address-0xC000]
-
-	case address < 0xE000:
+	case 0xD:
 		// Internal RAM Bank 1-7
 		return mem.WRAM[(address-0xC000)+(uint16(mem.WRAMBank)*0x1000)]
+	}
 
+	switch {
 	case address < 0xFE00:
 		// Echo RAM
 		// TODO: re-enable echo RAM?
