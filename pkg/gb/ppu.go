@@ -262,27 +262,23 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 		}
 		colourBit := byte(int8((xPos%8)-7) * -1)
 		colourNum := (bits.Val(data2, colourBit) << 1) | bits.Val(data1, colourBit)
-		gb.setTilePixel(pixel, scanline, tileAttr, colourNum, palette, priority)
+
+		pixelIndex := scanline*ScreenWidth + pixel
+
+		// Set the pixel
+		if gb.IsCGB() {
+			cgbPalette := tileAttr & 0x7
+			rgba := gb.BGPalette.get(cgbPalette, colourNum)
+			gb.setPixel(pixelIndex, rgba, true)
+			gb.bgPriority[pixelIndex] = priority
+		} else {
+			rgba := gb.getColour(colourNum, palette)
+			gb.setPixel(pixelIndex, rgba, true)
+		}
+
+		// Store for the current scanline so sprite priority can be managed
+		gb.tileScanline[pixel] = colourNum
 	}
-}
-
-func (gb *Gameboy) setTilePixel(x, y int, tileAttr, colourNum, palette byte, priority bool) {
-
-	pixelIndex := y*ScreenWidth + x
-
-	// Set the pixel
-	if gb.IsCGB() {
-		cgbPalette := tileAttr & 0x7
-		rgba := gb.BGPalette.get(cgbPalette, colourNum)
-		gb.setPixel(pixelIndex, rgba, true)
-		gb.bgPriority[pixelIndex] = priority
-	} else {
-		rgba := gb.getColour(colourNum, palette)
-		gb.setPixel(pixelIndex, rgba, true)
-	}
-
-	// Store for the current scanline so sprite priority can be managed
-	gb.tileScanline[x] = colourNum
 }
 
 // Get the RGB colour value for a colour num at an address using the current palette.
