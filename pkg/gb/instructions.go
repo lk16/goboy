@@ -45,13 +45,66 @@ var CBOpcodeCycles = []int{
 // executeNextOpcode gets the value at the current PC address, increments the PC,
 // updates the CPU ticks and executes the opcode.
 func (gb *Gameboy) executeNextOpcode() int {
-	opcode := int(gb.popPC())
+	opcode := uint(gb.popPC())
 	gb.thisCpuTicks = OpcodeCycles[opcode] * 4
 	gb.executeInstruction(opcode)
 	return gb.thisCpuTicks
 }
 
-func (gb *Gameboy) executeInstruction(opcode int) {
+func (gb *Gameboy) executeInstruction(opcode uint) {
+
+	opcode &= 0xFF
+
+	if opcode == 0x76 {
+		// HALT
+		gb.halted = true
+		return
+	}
+
+	if opcode&0xC0 == 0x40 {
+
+		var val byte
+
+		switch opcode & 0x07 {
+		case 0x00:
+			val = gb.CPU.b()
+		case 0x01:
+			val = gb.CPU.c()
+		case 0x02:
+			val = gb.CPU.d()
+		case 0x03:
+			val = gb.CPU.e()
+		case 0x04:
+			val = gb.CPU.h()
+		case 0x05:
+			val = gb.CPU.l()
+		case 0x06:
+			val = gb.Memory.Read(gb.CPU.hl())
+		case 0x07:
+			val = gb.CPU.a()
+		}
+
+		switch opcode & 0x38 {
+		case 0x00:
+			gb.CPU.setB(val)
+		case 0x08:
+			gb.CPU.setC(val)
+		case 0x10:
+			gb.CPU.setD(val)
+		case 0x18:
+			gb.CPU.setE(val)
+		case 0x20:
+			gb.CPU.setH(val)
+		case 0x28:
+			gb.CPU.setL(val)
+		case 0x30:
+			gb.Memory.Write(gb.CPU.hl(), val)
+		case 0x38:
+			gb.CPU.setA(val)
+		}
+		return
+	}
+
 	switch opcode {
 	case 0x06:
 		// LD B, n
@@ -71,27 +124,6 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x2E:
 		// LD L, n
 		gb.CPU.setL(gb.popPC())
-	case 0x7F:
-		// LD A,A
-		gb.CPU.setA(gb.CPU.a())
-	case 0x78:
-		// LD A,B
-		gb.CPU.setA(gb.CPU.b())
-	case 0x79:
-		// LD A,C
-		gb.CPU.setA(gb.CPU.c())
-	case 0x7A:
-		// LD A,D
-		gb.CPU.setA(gb.CPU.d())
-	case 0x7B:
-		// LD A,E
-		gb.CPU.setA(gb.CPU.e())
-	case 0x7C:
-		// LD A,H
-		gb.CPU.setA(gb.CPU.h())
-	case 0x7D:
-		// LD A,L
-		gb.CPU.setA(gb.CPU.l())
 	case 0x0A:
 		// LD A,(BC)
 		val := gb.Memory.Read(gb.CPU.bc())
@@ -99,10 +131,6 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x1A:
 		// LD A,(DE)
 		val := gb.Memory.Read(gb.CPU.de())
-		gb.CPU.setA(val)
-	case 0x7E:
-		// LD A,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
 		gb.CPU.setA(val)
 	case 0xFA:
 		// LD A,(nn)
@@ -112,184 +140,6 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		// LD A,(nn)
 		val := gb.popPC()
 		gb.CPU.setA(val)
-	case 0x47:
-		// LD B,A
-		gb.CPU.setB(gb.CPU.a())
-	case 0x40:
-		// LD B,B
-		gb.CPU.setB(gb.CPU.b())
-	case 0x41:
-		// LD B,C
-		gb.CPU.setB(gb.CPU.c())
-	case 0x42:
-		// LD B,D
-		gb.CPU.setB(gb.CPU.d())
-	case 0x43:
-		// LD B,E
-		gb.CPU.setB(gb.CPU.e())
-	case 0x44:
-		// LD B,H
-		gb.CPU.setB(gb.CPU.h())
-	case 0x45:
-		// LD B,L
-		gb.CPU.setB(gb.CPU.l())
-	case 0x46:
-		// LD B,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setB(val)
-	case 0x4F:
-		// LD C,A
-		gb.CPU.setC(gb.CPU.a())
-	case 0x48:
-		// LD C,B
-		gb.CPU.setC(gb.CPU.b())
-	case 0x49:
-		// LD C,C
-		gb.CPU.setC(gb.CPU.c())
-	case 0x4A:
-		// LD C,D
-		gb.CPU.setC(gb.CPU.d())
-	case 0x4B:
-		// LD C,E
-		gb.CPU.setC(gb.CPU.e())
-	case 0x4C:
-		// LD C,H
-		gb.CPU.setC(gb.CPU.h())
-	case 0x4D:
-		// LD C,L
-		gb.CPU.setC(gb.CPU.l())
-	case 0x4E:
-		// LD C,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setC(val)
-	case 0x57:
-		// LD D,A
-		gb.CPU.setD(gb.CPU.a())
-	case 0x50:
-		// LD D,B
-		gb.CPU.setD(gb.CPU.b())
-	case 0x51:
-		// LD D,C
-		gb.CPU.setD(gb.CPU.c())
-	case 0x52:
-		// LD D,D
-		gb.CPU.setD(gb.CPU.d())
-	case 0x53:
-		// LD D,E
-		gb.CPU.setD(gb.CPU.e())
-	case 0x54:
-		// LD D,H
-		gb.CPU.setD(gb.CPU.h())
-	case 0x55:
-		// LD D,L
-		gb.CPU.setD(gb.CPU.l())
-	case 0x56:
-		// LD D,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setD(val)
-	case 0x5F:
-		// LD E,A
-		gb.CPU.setE(gb.CPU.a())
-	case 0x58:
-		// LD E,B
-		gb.CPU.setE(gb.CPU.b())
-	case 0x59:
-		// LD E,C
-		gb.CPU.setE(gb.CPU.c())
-	case 0x5A:
-		// LD E,D
-		gb.CPU.setE(gb.CPU.d())
-	case 0x5B:
-		// LD E,E
-		gb.CPU.setE(gb.CPU.e())
-	case 0x5C:
-		// LD E,H
-		gb.CPU.setE(gb.CPU.h())
-	case 0x5D:
-		// LD E,L
-		gb.CPU.setE(gb.CPU.l())
-	case 0x5E:
-		// LD E,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setE(val)
-	case 0x67:
-		// LD H,A
-		gb.CPU.setH(gb.CPU.a())
-	case 0x60:
-		// LD H,B
-		gb.CPU.setH(gb.CPU.b())
-	case 0x61:
-		// LD H,C
-		gb.CPU.setH(gb.CPU.c())
-	case 0x62:
-		// LD H,D
-		gb.CPU.setH(gb.CPU.d())
-	case 0x63:
-		// LD H,E
-		gb.CPU.setH(gb.CPU.e())
-	case 0x64:
-		// LD H,H
-		gb.CPU.setH(gb.CPU.h())
-	case 0x65:
-		// LD H,L
-		gb.CPU.setH(gb.CPU.l())
-	case 0x66:
-		// LD H,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setH(val)
-	case 0x6F:
-		// LD L,A
-		gb.CPU.setL(gb.CPU.a())
-	case 0x68:
-		// LD L,B
-		gb.CPU.setL(gb.CPU.b())
-	case 0x69:
-		// LD L,C
-		gb.CPU.setL(gb.CPU.c())
-	case 0x6A:
-		// LD L,D
-		gb.CPU.setL(gb.CPU.d())
-	case 0x6B:
-		// LD L,E
-		gb.CPU.setL(gb.CPU.e())
-	case 0x6C:
-		// LD L,H
-		gb.CPU.setL(gb.CPU.h())
-	case 0x6D:
-		// LD L,L
-		gb.CPU.setL(gb.CPU.l())
-	case 0x6E:
-		// LD L,(HL)
-		val := gb.Memory.Read(gb.CPU.hl())
-		gb.CPU.setL(val)
-	case 0x77:
-		// LD (HL),A
-		val := gb.CPU.a()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x70:
-		// LD (HL),B
-		val := gb.CPU.b()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x71:
-		// LD (HL),C
-		val := gb.CPU.c()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x72:
-		// LD (HL),D
-		val := gb.CPU.d()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x73:
-		// LD (HL),E
-		val := gb.CPU.e()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x74:
-		// LD (HL),H
-		val := gb.CPU.h()
-		gb.Memory.Write(gb.CPU.hl(), val)
-	case 0x75:
-		// LD (HL),L
-		val := gb.CPU.l()
-		gb.Memory.Write(gb.CPU.hl(), val)
 	case 0x36:
 		// LD (HL),n 36
 		val := gb.popPC()
