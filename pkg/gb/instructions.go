@@ -105,6 +105,50 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		return
 	}
 
+	if opcode&0xC0 == 0x80 {
+
+		var val byte
+
+		switch opcode & 0x07 {
+		case 0x00:
+			val = gb.CPU.b()
+		case 0x01:
+			val = gb.CPU.c()
+		case 0x02:
+			val = gb.CPU.d()
+		case 0x03:
+			val = gb.CPU.e()
+		case 0x04:
+			val = gb.CPU.h()
+		case 0x05:
+			val = gb.CPU.l()
+		case 0x06:
+			val = gb.Memory.Read(gb.CPU.hl())
+		case 0x07:
+			val = gb.CPU.a()
+		}
+
+		switch opcode & 0x38 {
+		case 0x00:
+			gb.instAdd(gb.CPU.setA, val, gb.CPU.a(), false)
+		case 0x08:
+			gb.instAdd(gb.CPU.setA, val, gb.CPU.a(), true)
+		case 0x10:
+			gb.instSub(gb.CPU.setA, gb.CPU.a(), val, false)
+		case 0x18:
+			gb.instSub(gb.CPU.setA, gb.CPU.a(), val, true)
+		case 0x20:
+			gb.instAnd(gb.CPU.setA, val, gb.CPU.a())
+		case 0x28:
+			gb.instXor(gb.CPU.setA, val, gb.CPU.a())
+		case 0x30:
+			gb.instOr(gb.CPU.setA, val, gb.CPU.a())
+		case 0x38:
+			gb.instCp(val, gb.CPU.a())
+		}
+		return
+	}
+
 	switch opcode {
 	case 0x06:
 		// LD B, n
@@ -247,219 +291,27 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		// POP HL
 		gb.CPU.setHl(gb.popStack())
 	// ========== 8-Bit ALU ===========
-	case 0x87:
-		// ADD A,A
-		gb.instAdd(gb.CPU.setA, gb.CPU.a(), gb.CPU.a(), false)
-	case 0x80:
-		// ADD A,B
-		gb.instAdd(gb.CPU.setA, gb.CPU.b(), gb.CPU.a(), false)
-	case 0x81:
-		// ADD A,C
-		gb.instAdd(gb.CPU.setA, gb.CPU.c(), gb.CPU.a(), false)
-	case 0x82:
-		// ADD A,D
-		gb.instAdd(gb.CPU.setA, gb.CPU.d(), gb.CPU.a(), false)
-	case 0x83:
-		// ADD A,E
-		gb.instAdd(gb.CPU.setA, gb.CPU.e(), gb.CPU.a(), false)
-	case 0x84:
-		// ADD A,H
-		gb.instAdd(gb.CPU.setA, gb.CPU.h(), gb.CPU.a(), false)
-	case 0x85:
-		// ADD A,L
-		gb.instAdd(gb.CPU.setA, gb.CPU.l(), gb.CPU.a(), false)
-	case 0x86:
-		// ADD A,(HL)
-		gb.instAdd(gb.CPU.setA, gb.Memory.Read(gb.CPU.hl()), gb.CPU.a(), false)
 	case 0xC6:
 		// ADD A,#
 		gb.instAdd(gb.CPU.setA, gb.popPC(), gb.CPU.a(), false)
-	case 0x8F:
-		// ADC A,A
-		gb.instAdd(gb.CPU.setA, gb.CPU.a(), gb.CPU.a(), true)
-	case 0x88:
-		// ADC A,B
-		gb.instAdd(gb.CPU.setA, gb.CPU.b(), gb.CPU.a(), true)
-	case 0x89:
-		// ADC A,C
-		gb.instAdd(gb.CPU.setA, gb.CPU.c(), gb.CPU.a(), true)
-	case 0x8A:
-		// ADC A,D
-		gb.instAdd(gb.CPU.setA, gb.CPU.d(), gb.CPU.a(), true)
-	case 0x8B:
-		// ADC A,E
-		gb.instAdd(gb.CPU.setA, gb.CPU.e(), gb.CPU.a(), true)
-	case 0x8C:
-		// ADC A,H
-		gb.instAdd(gb.CPU.setA, gb.CPU.h(), gb.CPU.a(), true)
-	case 0x8D:
-		// ADC A,L
-		gb.instAdd(gb.CPU.setA, gb.CPU.l(), gb.CPU.a(), true)
-	case 0x8E:
-		// ADC A,(HL)
-		gb.instAdd(gb.CPU.setA, gb.Memory.Read(gb.CPU.hl()), gb.CPU.a(), true)
 	case 0xCE:
 		// ADC A,#
 		gb.instAdd(gb.CPU.setA, gb.popPC(), gb.CPU.a(), true)
-	case 0x97:
-		// SUB A,A
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.a(), false)
-	case 0x90:
-		// SUB A,B
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.b(), false)
-	case 0x91:
-		// SUB A,C
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.c(), false)
-	case 0x92:
-		// SUB A,D
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.d(), false)
-	case 0x93:
-		// SUB A,E
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.e(), false)
-	case 0x94:
-		// SUB A,H
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.h(), false)
-	case 0x95:
-		// SUB A,L
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.l(), false)
-	case 0x96:
-		// SUB A,(HL)
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.Memory.Read(gb.CPU.hl()), false)
 	case 0xD6:
 		// SUB A,#
 		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.popPC(), false)
-	case 0x9F:
-		// SBC A,A
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.a(), true)
-	case 0x98:
-		// SBC A,B
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.b(), true)
-	case 0x99:
-		// SBC A,C
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.c(), true)
-	case 0x9A:
-		// SBC A,D
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.d(), true)
-	case 0x9B:
-		// SBC A,E
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.e(), true)
-	case 0x9C:
-		// SBC A,H
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.h(), true)
-	case 0x9D:
-		// SBC A,L
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.CPU.l(), true)
-	case 0x9E:
-		// SBC A,(HL)
-		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.Memory.Read(gb.CPU.hl()), true)
 	case 0xDE:
 		// SBC A,#
 		gb.instSub(gb.CPU.setA, gb.CPU.a(), gb.popPC(), true)
-	case 0xA7:
-		// AND A,A
-		gb.instAnd(gb.CPU.setA, gb.CPU.a(), gb.CPU.a())
-	case 0xA0:
-		// AND A,B
-		gb.instAnd(gb.CPU.setA, gb.CPU.b(), gb.CPU.a())
-	case 0xA1:
-		// AND A,C
-		gb.instAnd(gb.CPU.setA, gb.CPU.c(), gb.CPU.a())
-	case 0xA2:
-		// AND A,D
-		gb.instAnd(gb.CPU.setA, gb.CPU.d(), gb.CPU.a())
-	case 0xA3:
-		// AND A,E
-		gb.instAnd(gb.CPU.setA, gb.CPU.e(), gb.CPU.a())
-	case 0xA4:
-		// AND A,H
-		gb.instAnd(gb.CPU.setA, gb.CPU.h(), gb.CPU.a())
-	case 0xA5:
-		// AND A,L
-		gb.instAnd(gb.CPU.setA, gb.CPU.l(), gb.CPU.a())
-	case 0xA6:
-		// AND A,(HL)
-		gb.instAnd(gb.CPU.setA, gb.Memory.Read(gb.CPU.hl()), gb.CPU.a())
 	case 0xE6:
 		// AND A,#
 		gb.instAnd(gb.CPU.setA, gb.popPC(), gb.CPU.a())
-	case 0xB7:
-		// OR A,A
-		gb.instOr(gb.CPU.setA, gb.CPU.a(), gb.CPU.a())
-	case 0xB0:
-		// OR A,B
-		gb.instOr(gb.CPU.setA, gb.CPU.b(), gb.CPU.a())
-	case 0xB1:
-		// OR A,C
-		gb.instOr(gb.CPU.setA, gb.CPU.c(), gb.CPU.a())
-	case 0xB2:
-		// OR A,D
-		gb.instOr(gb.CPU.setA, gb.CPU.d(), gb.CPU.a())
-	case 0xB3:
-		// OR A,E
-		gb.instOr(gb.CPU.setA, gb.CPU.e(), gb.CPU.a())
-	case 0xB4:
-		// OR A,H
-		gb.instOr(gb.CPU.setA, gb.CPU.h(), gb.CPU.a())
-	case 0xB5:
-		// OR A,L
-		gb.instOr(gb.CPU.setA, gb.CPU.l(), gb.CPU.a())
-	case 0xB6:
-		// OR A,(HL)
-		gb.instOr(gb.CPU.setA, gb.Memory.Read(gb.CPU.hl()), gb.CPU.a())
 	case 0xF6:
 		// OR A,#
 		gb.instOr(gb.CPU.setA, gb.popPC(), gb.CPU.a())
-	case 0xAF:
-		// XOR A,A
-		gb.instXor(gb.CPU.setA, gb.CPU.a(), gb.CPU.a())
-	case 0xA8:
-		// XOR A,B
-		gb.instXor(gb.CPU.setA, gb.CPU.b(), gb.CPU.a())
-	case 0xA9:
-		// XOR A,C
-		gb.instXor(gb.CPU.setA, gb.CPU.c(), gb.CPU.a())
-	case 0xAA:
-		// XOR A,D
-		gb.instXor(gb.CPU.setA, gb.CPU.d(), gb.CPU.a())
-	case 0xAB:
-		// XOR A,E
-		gb.instXor(gb.CPU.setA, gb.CPU.e(), gb.CPU.a())
-	case 0xAC:
-		// XOR A,H
-		gb.instXor(gb.CPU.setA, gb.CPU.h(), gb.CPU.a())
-	case 0xAD:
-		// XOR A,L
-		gb.instXor(gb.CPU.setA, gb.CPU.l(), gb.CPU.a())
-	case 0xAE:
-		// XOR A,(HL)
-		gb.instXor(gb.CPU.setA, gb.Memory.Read(gb.CPU.hl()), gb.CPU.a())
 	case 0xEE:
 		// XOR A,#
 		gb.instXor(gb.CPU.setA, gb.popPC(), gb.CPU.a())
-	case 0xBF:
-		// CP A,A
-		gb.instCp(gb.CPU.a(), gb.CPU.a())
-	case 0xB8:
-		// CP A,B
-		gb.instCp(gb.CPU.b(), gb.CPU.a())
-	case 0xB9:
-		// CP A,C
-		gb.instCp(gb.CPU.c(), gb.CPU.a())
-	case 0xBA:
-		// CP A,D
-		gb.instCp(gb.CPU.d(), gb.CPU.a())
-	case 0xBB:
-		// CP A,E
-		gb.instCp(gb.CPU.e(), gb.CPU.a())
-	case 0xBC:
-		// CP A,H
-		gb.instCp(gb.CPU.h(), gb.CPU.a())
-	case 0xBD:
-		// CP A,L
-		gb.instCp(gb.CPU.l(), gb.CPU.a())
-	case 0xBE:
-		// CP A,(HL)
-		gb.instCp(gb.Memory.Read(gb.CPU.hl()), gb.CPU.a())
 	case 0xFE:
 		// CP A,#
 		gb.instCp(gb.popPC(), gb.CPU.a())
