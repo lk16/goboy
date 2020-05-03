@@ -362,8 +362,8 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		gb.CPU.setSp(val)
 	case 0xF9:
 		// LD SP,HL
-		val := gb.CPU.HL
-		gb.CPU.SP = val
+		val := gb.CPU.hl()
+		gb.CPU.setSp(val)
 	case 0xF8:
 		// LD HL,SP+n
 		gb.instAdd16Signed(gb.CPU.setHl, gb.CPU.sp(), int8(gb.popPC()))
