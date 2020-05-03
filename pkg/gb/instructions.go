@@ -174,6 +174,25 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		return
 	}
 
+	if opcode&0xCF == 0x02 {
+
+		a := gb.CPU.a()
+
+		switch opcode {
+		case 0x02:
+			gb.Memory.Write(gb.CPU.bc(), a)
+		case 0x12:
+			gb.Memory.Write(gb.CPU.de(), a)
+		case 0x22:
+			gb.Memory.Write(gb.CPU.hl(), a)
+			gb.CPU.setHl(gb.CPU.hl() + 1)
+		case 0x32:
+			gb.Memory.Write(gb.CPU.hl(), a)
+			gb.CPU.setHl(gb.CPU.hl() - 1)
+		}
+		return
+	}
+
 	switch opcode {
 	case 0x0A:
 		// LD A,(BC)
@@ -187,14 +206,6 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		// LD A,(nn)
 		val := gb.Memory.Read(gb.popPC16())
 		gb.CPU.setA(val)
-	case 0x02:
-		// LD (BC),A
-		val := gb.CPU.a()
-		gb.Memory.Write(gb.CPU.bc(), val)
-	case 0x12:
-		// LD (DE),A
-		val := gb.CPU.a()
-		gb.Memory.Write(gb.CPU.de(), val)
 	case 0xEA:
 		// LD (nn),A
 		val := gb.CPU.a()
@@ -213,20 +224,10 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		val := gb.Memory.Read(gb.CPU.hl())
 		gb.CPU.setA(val)
 		gb.CPU.setHl(gb.CPU.hl() - 1)
-	case 0x32:
-		// LDD (HL),A
-		val := gb.CPU.hl()
-		gb.Memory.Write(val, gb.CPU.a())
-		gb.CPU.setHl(gb.CPU.hl() - 1)
 	case 0x2A:
 		// LDI A,(HL)
 		val := gb.Memory.Read(gb.CPU.hl())
 		gb.CPU.setA(val)
-		gb.CPU.setHl(gb.CPU.hl() + 1)
-	case 0x22:
-		// LDI (HL),A
-		val := gb.CPU.hl()
-		gb.Memory.Write(val, gb.CPU.a())
 		gb.CPU.setHl(gb.CPU.hl() + 1)
 	case 0xE0:
 		// LD (0xFF00+n),A
