@@ -16,7 +16,7 @@ func cpuTimingTest(t *testing.T, options ...GameboyOption) {
 	gb, err := NewGameboy("./../../roms/blargg/instr_timing.gb", options...)
 	require.NoError(t, err, "error in init gb %v", err)
 
-	expected := "instr_timing\n\n\nPassed"
+	expected := "instr_timing\n\n\nPassed\n"
 
 	// Run the CPU until maxIterations iterations have passed.
 	for i := 0; i < maxIterations; i++ {
