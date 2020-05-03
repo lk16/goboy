@@ -102,14 +102,14 @@ func (gb *Gameboy) cbInstructions() [0x100]func() {
 	instructions := [0x100]func(){}
 
 	getMap := [8]func() byte{
-		gb.CPU.reg[regBC].Hi,
-		gb.CPU.reg[regBC].Lo,
-		gb.CPU.reg[regDE].Hi,
-		gb.CPU.reg[regDE].Lo,
-		gb.CPU.reg[regHL].Hi,
-		gb.CPU.reg[regHL].Lo,
+		gb.CPU.reg[regBC].hi,
+		gb.CPU.reg[regBC].lo,
+		gb.CPU.reg[regDE].hi,
+		gb.CPU.reg[regDE].lo,
+		gb.CPU.reg[regHL].hi,
+		gb.CPU.reg[regHL].lo,
 		func() byte { return gb.Memory.Read(gb.CPU.hl()) },
-		gb.CPU.reg[regAF].Hi,
+		gb.CPU.reg[regAF].hi,
 	}
 	setMap := [8]func(byte){
 		gb.CPU.setB,
