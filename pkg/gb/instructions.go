@@ -149,25 +149,32 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		return
 	}
 
+	if opcode&0xC7 == 0x06 {
+
+		pc := gb.popPC()
+
+		switch opcode {
+		case 0x06:
+			gb.CPU.setB(pc)
+		case 0x0E:
+			gb.CPU.setC(pc)
+		case 0x16:
+			gb.CPU.setD(pc)
+		case 0x1E:
+			gb.CPU.setE(pc)
+		case 0x26:
+			gb.CPU.setH(pc)
+		case 0x2E:
+			gb.CPU.setL(pc)
+		case 0x3E:
+			gb.CPU.setA(pc)
+		case 0x36:
+			gb.Memory.Write(gb.CPU.hl(), pc)
+		}
+		return
+	}
+
 	switch opcode {
-	case 0x06:
-		// LD B, n
-		gb.CPU.setB(gb.popPC())
-	case 0x0E:
-		// LD C, n
-		gb.CPU.setC(gb.popPC())
-	case 0x16:
-		// LD D, n
-		gb.CPU.setD(gb.popPC())
-	case 0x1E:
-		// LD E, n
-		gb.CPU.setE(gb.popPC())
-	case 0x26:
-		// LD H, n
-		gb.CPU.setH(gb.popPC())
-	case 0x2E:
-		// LD L, n
-		gb.CPU.setL(gb.popPC())
 	case 0x0A:
 		// LD A,(BC)
 		val := gb.Memory.Read(gb.CPU.bc())
@@ -180,14 +187,6 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		// LD A,(nn)
 		val := gb.Memory.Read(gb.popPC16())
 		gb.CPU.setA(val)
-	case 0x3E:
-		// LD A,(nn)
-		val := gb.popPC()
-		gb.CPU.setA(val)
-	case 0x36:
-		// LD (HL),n 36
-		val := gb.popPC()
-		gb.Memory.Write(gb.CPU.hl(), val)
 	case 0x02:
 		// LD (BC),A
 		val := gb.CPU.a()
