@@ -108,18 +108,18 @@ func (gb *Gameboy) cbInstructions() [0x100]func() {
 		gb.CPU.DE.Lo,
 		gb.CPU.HL.Hi,
 		gb.CPU.HL.Lo,
-		func() byte { return gb.Memory.Read(gb.CPU.HL.HiLo()) },
+		func() byte { return gb.Memory.Read(gb.CPU.hl()) },
 		gb.CPU.AF.Hi,
 	}
 	setMap := [8]func(byte){
-		gb.CPU.BC.SetHi,
-		gb.CPU.BC.SetLo,
-		gb.CPU.DE.SetHi,
-		gb.CPU.DE.SetLo,
-		gb.CPU.HL.SetHi,
-		gb.CPU.HL.SetLo,
-		func(v byte) { gb.Memory.Write(gb.CPU.HL.HiLo(), v) },
-		gb.CPU.AF.SetHi,
+		gb.CPU.setB,
+		gb.CPU.setC,
+		gb.CPU.setD,
+		gb.CPU.setE,
+		gb.CPU.setH,
+		gb.CPU.setL,
+		func(v byte) { gb.Memory.Write(gb.CPU.hl(), v) },
+		gb.CPU.setA,
 	}
 
 	for x := 0; x < 8; x++ {

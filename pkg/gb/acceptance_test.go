@@ -41,10 +41,10 @@ func inFinishLoop(gb *Gameboy) bool {
 }
 
 func passedTest(gb *Gameboy) bool {
-	return gb.CPU.AF.Hi() == 0x00 &&
-		gb.CPU.BC.HiLo() == 0x0305 &&
-		gb.CPU.DE.HiLo() == 0x080D &&
-		gb.CPU.HL.HiLo() == 0x1522
+	return gb.CPU.a() == 0x00 &&
+		gb.CPU.bc() == 0x0305 &&
+		gb.CPU.de() == 0x080D &&
+		gb.CPU.hl() == 0x1522
 }
 
 func runMooneyeTest(t *testing.T, file string) {

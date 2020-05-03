@@ -118,21 +118,25 @@ func (cpu *CPU) setF(val byte) { cpu.AF.SetLo(val) }
 func (cpu *CPU) setH(val byte) { cpu.HL.SetHi(val) }
 func (cpu *CPU) setL(val byte) { cpu.HL.SetLo(val) }
 
-func (cpu *CPU) a() byte { return cpu.AF.Hi() }
-func (cpu *CPU) b() byte { return cpu.BC.Hi() }
-func (cpu *CPU) c() byte { return cpu.BC.Lo() }
-func (cpu *CPU) d() byte { return cpu.DE.Hi() }
-func (cpu *CPU) e() byte { return cpu.DE.Lo() }
-func (cpu *CPU) f() byte { return cpu.AF.Lo() }
-func (cpu *CPU) h() byte { return cpu.HL.Hi() }
-func (cpu *CPU) l() byte { return cpu.HL.Lo() }
+func (cpu *CPU) a() byte    { return cpu.AF.Hi() }
+func (cpu *CPU) b() byte    { return cpu.BC.Hi() }
+func (cpu *CPU) c() byte    { return cpu.BC.Lo() }
+func (cpu *CPU) d() byte    { return cpu.DE.Hi() }
+func (cpu *CPU) e() byte    { return cpu.DE.Lo() }
+func (cpu *CPU) f() byte    { return cpu.AF.Lo() }
+func (cpu *CPU) h() byte    { return cpu.HL.Hi() }
+func (cpu *CPU) l() byte    { return cpu.HL.Lo() }
+func (cpu *CPU) spHi() byte { return cpu.SP.Hi() }
+func (cpu *CPU) spLo() byte { return cpu.SP.Lo() }
 
 func (cpu *CPU) af() uint16 { return cpu.AF.HiLo() }
 func (cpu *CPU) bc() uint16 { return cpu.BC.HiLo() }
 func (cpu *CPU) de() uint16 { return cpu.DE.HiLo() }
 func (cpu *CPU) hl() uint16 { return cpu.HL.HiLo() }
+func (cpu *CPU) sp() uint16 { return cpu.SP.HiLo() }
 
 func (cpu *CPU) setAf(val uint16) { cpu.AF.Set(val) }
 func (cpu *CPU) setBc(val uint16) { cpu.BC.Set(val) }
 func (cpu *CPU) setDe(val uint16) { cpu.DE.Set(val) }
 func (cpu *CPU) setHl(val uint16) { cpu.HL.Set(val) }
+func (cpu *CPU) setSp(val uint16) { cpu.SP.Set(val) }

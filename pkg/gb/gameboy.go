@@ -263,18 +263,18 @@ func (gb *Gameboy) serviceInterrupt(interrupt byte) {
 
 // Push a 16 bit value onto the stack and decrement SP.
 func (gb *Gameboy) pushStack(address uint16) {
-	sp := gb.CPU.SP.HiLo()
+	sp := gb.CPU.sp()
 	gb.Memory.Write(sp-1, byte(uint16(address&0xFF00)>>8))
 	gb.Memory.Write(sp-2, byte(address&0xFF))
-	gb.CPU.SP.Set(gb.CPU.SP.HiLo() - 2)
+	gb.CPU.setSp(gb.CPU.sp() - 2)
 }
 
 // Pop the next 16 bit value off the stack and increment SP.
 func (gb *Gameboy) popStack() uint16 {
-	sp := gb.CPU.SP.HiLo()
+	sp := gb.CPU.sp()
 	byte1 := uint16(gb.Memory.Read(sp))
 	byte2 := uint16(gb.Memory.Read(sp+1)) << 8
-	gb.CPU.SP.Set(gb.CPU.SP.HiLo() + 2)
+	gb.CPU.setSp(gb.CPU.sp() + 2)
 	return byte1 | byte2
 }
 
