@@ -9,22 +9,22 @@ func (gb *Gameboy) instRlc(setter func(byte), val byte) {
 	rot := (val<<1)&0xFF | carry
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(carry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(carry == 1)
 }
 
 func (gb *Gameboy) instRl(setter func(byte), val byte) {
 	newCarry := val >> 7
-	oldCarry := bits.B(gb.CPU.C())
+	oldCarry := bits.B(gb.CPU.flagC())
 	rot := (val<<1)&0xFF | oldCarry
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(newCarry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(newCarry == 1)
 }
 
 func (gb *Gameboy) instRrc(setter func(byte), val byte) {
@@ -32,22 +32,22 @@ func (gb *Gameboy) instRrc(setter func(byte), val byte) {
 	rot := (val >> 1) | (carry << 7)
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(carry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(carry == 1)
 }
 
 func (gb *Gameboy) instRr(setter func(byte), val byte) {
 	newCarry := val & 1
-	oldCarry := bits.B(gb.CPU.C())
+	oldCarry := bits.B(gb.CPU.flagC())
 	rot := (val >> 1) | (oldCarry << 7)
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(newCarry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(newCarry == 1)
 }
 
 func (gb *Gameboy) instSla(setter func(byte), val byte) {
@@ -55,20 +55,20 @@ func (gb *Gameboy) instSla(setter func(byte), val byte) {
 	rot := (val << 1) & 0xFF
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(carry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(carry == 1)
 }
 
 func (gb *Gameboy) instSra(setter func(byte), val byte) {
 	rot := (val & 128) | (val >> 1)
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(val&1 == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(val&1 == 1)
 }
 
 func (gb *Gameboy) instSrl(setter func(byte), val byte) {
@@ -76,26 +76,26 @@ func (gb *Gameboy) instSrl(setter func(byte), val byte) {
 	rot := val >> 1
 	setter(rot)
 
-	gb.CPU.SetZ(rot == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(carry == 1)
+	gb.CPU.setFlagZ(rot == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(carry == 1)
 }
 
 func (gb *Gameboy) instBit(bit byte, val byte) {
-	gb.CPU.SetZ((val>>bit)&1 == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(true)
+	gb.CPU.setFlagZ((val>>bit)&1 == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(true)
 }
 
 func (gb *Gameboy) instSwap(setter func(byte), val byte) {
 	swapped := val<<4&240 | val>>4
 	setter(swapped)
 
-	gb.CPU.SetZ(swapped == 0)
-	gb.CPU.SetN(false)
-	gb.CPU.SetH(false)
-	gb.CPU.SetC(false)
+	gb.CPU.setFlagZ(swapped == 0)
+	gb.CPU.setFlagN(false)
+	gb.CPU.setFlagH(false)
+	gb.CPU.setFlagC(false)
 }
 
 func (gb *Gameboy) cbInstructions() [0x100]func() {

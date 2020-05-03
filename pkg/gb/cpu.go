@@ -99,42 +99,34 @@ func (cpu *CPU) getFlag(index int) bool {
 	return cpu.AF.value&mask != 0
 }
 
-// SetZ sets the value of the Z flag.
-func (cpu *CPU) SetZ(on bool) {
+func (cpu *CPU) setFlagZ(on bool) {
 	cpu.setFlag(7, on)
 }
 
-// SetN sets the value of the N flag.
-func (cpu *CPU) SetN(on bool) {
+func (cpu *CPU) setFlagN(on bool) {
 	cpu.setFlag(6, on)
 }
 
-// SetH sets the value of the H flag.
-func (cpu *CPU) SetH(on bool) {
+func (cpu *CPU) setFlagH(on bool) {
 	cpu.setFlag(5, on)
 }
 
-// SetC sets the value of the C flag.
-func (cpu *CPU) SetC(on bool) {
+func (cpu *CPU) setFlagC(on bool) {
 	cpu.setFlag(4, on)
 }
 
-// Z gets the value of the Z flag.
-func (cpu *CPU) Z() bool {
+func (cpu *CPU) flagZ() bool {
 	return cpu.getFlag(7)
 }
 
-// N gets the value of the N flag.
-func (cpu *CPU) N() bool {
+func (cpu *CPU) flagN() bool {
 	return cpu.getFlag(6)
 }
 
-// H gets the value of the H flag.
-func (cpu *CPU) H() bool {
+func (cpu *CPU) flagH() bool {
 	return cpu.getFlag(5)
 }
 
-// C gets the value of the C flag.
-func (cpu *CPU) C() bool {
+func (cpu *CPU) flagC() bool {
 	return cpu.getFlag(4)
 }

@@ -679,7 +679,7 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0xE8:
 		// ADD SP,n
 		gb.instAdd16Signed(gb.CPU.SP.Set, gb.CPU.SP.HiLo(), int8(gb.popPC()))
-		gb.CPU.SetZ(false)
+		gb.CPU.setFlagZ(false)
 	case 0x03:
 		// INC BC
 		gb.instInc16(gb.CPU.BC.Set, gb.CPU.BC.HiLo())
@@ -715,40 +715,40 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		// four most significant bits are checked. If this more significant
 		// digit also happens to be greater than 9 or the C flag is set,
 		// then 0x60 is added.
-		if !gb.CPU.N() {
-			if gb.CPU.C() || gb.CPU.AF.Hi() > 0x99 {
+		if !gb.CPU.flagN() {
+			if gb.CPU.flagC() || gb.CPU.AF.Hi() > 0x99 {
 				gb.CPU.AF.SetHi(gb.CPU.AF.Hi() + 0x60)
-				gb.CPU.SetC(true)
+				gb.CPU.setFlagC(true)
 			}
-			if gb.CPU.H() || gb.CPU.AF.Hi()&0xF > 0x9 {
+			if gb.CPU.flagH() || gb.CPU.AF.Hi()&0xF > 0x9 {
 				gb.CPU.AF.SetHi(gb.CPU.AF.Hi() + 0x06)
-				gb.CPU.SetH(false)
+				gb.CPU.setFlagH(false)
 			}
-		} else if gb.CPU.C() && gb.CPU.H() {
+		} else if gb.CPU.flagC() && gb.CPU.flagH() {
 			gb.CPU.AF.SetHi(gb.CPU.AF.Hi() + 0x9A)
-			gb.CPU.SetH(false)
-		} else if gb.CPU.C() {
+			gb.CPU.setFlagH(false)
+		} else if gb.CPU.flagC() {
 			gb.CPU.AF.SetHi(gb.CPU.AF.Hi() + 0xA0)
-		} else if gb.CPU.H() {
+		} else if gb.CPU.flagH() {
 			gb.CPU.AF.SetHi(gb.CPU.AF.Hi() + 0xFA)
-			gb.CPU.SetH(false)
+			gb.CPU.setFlagH(false)
 		}
-		gb.CPU.SetZ(gb.CPU.AF.Hi() == 0)
+		gb.CPU.setFlagZ(gb.CPU.AF.Hi() == 0)
 	case 0x2F:
 		// CPL
 		gb.CPU.AF.SetHi(0xFF ^ gb.CPU.AF.Hi())
-		gb.CPU.SetN(true)
-		gb.CPU.SetH(true)
+		gb.CPU.setFlagN(true)
+		gb.CPU.setFlagH(true)
 	case 0x3F:
 		// CCF
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC(!gb.CPU.C())
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC(!gb.CPU.flagC())
 	case 0x37:
 		// SCF
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC(true)
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC(true)
 	case 0x00:
 		// NOP
 	case 0x76:
@@ -777,73 +777,73 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		value := gb.CPU.AF.Hi()
 		result := byte(value<<1) | (value >> 7)
 		gb.CPU.AF.SetHi(result)
-		gb.CPU.SetZ(false)
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC(value > 0x7F)
+		gb.CPU.setFlagZ(false)
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC(value > 0x7F)
 	case 0x17:
 		// RLA
 		value := gb.CPU.AF.Hi()
 		var carry byte
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			carry = 1
 		}
 		result := byte(value<<1) + carry
 		gb.CPU.AF.SetHi(result)
-		gb.CPU.SetZ(false)
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC(value > 0x7F)
+		gb.CPU.setFlagZ(false)
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC(value > 0x7F)
 	case 0x0F:
 		// RRCA
 		value := gb.CPU.AF.Hi()
 		result := byte(value>>1) | byte((value&1)<<7)
 		gb.CPU.AF.SetHi(result)
-		gb.CPU.SetZ(false)
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC(result > 0x7F)
+		gb.CPU.setFlagZ(false)
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC(result > 0x7F)
 	case 0x1F:
 		// RRA
 		value := gb.CPU.AF.Hi()
 		var carry byte
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			carry = 0x80
 		}
 		result := byte(value>>1) | carry
 		gb.CPU.AF.SetHi(result)
-		gb.CPU.SetZ(false)
-		gb.CPU.SetN(false)
-		gb.CPU.SetH(false)
-		gb.CPU.SetC((1 & value) == 1)
+		gb.CPU.setFlagZ(false)
+		gb.CPU.setFlagN(false)
+		gb.CPU.setFlagH(false)
+		gb.CPU.setFlagC((1 & value) == 1)
 	case 0xC3:
 		// JP nn
 		gb.instJump(gb.popPC16())
 	case 0xC2:
 		// JP NZ,nn
 		next := gb.popPC16()
-		if !gb.CPU.Z() {
+		if !gb.CPU.flagZ() {
 			gb.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xCA:
 		// JP Z,nn
 		next := gb.popPC16()
-		if gb.CPU.Z() {
+		if gb.CPU.flagZ() {
 			gb.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xD2:
 		// JP NC,nn
 		next := gb.popPC16()
-		if !gb.CPU.C() {
+		if !gb.CPU.flagC() {
 			gb.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xDA:
 		// JP C,nn
 		next := gb.popPC16()
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			gb.instJump(next)
 			gb.thisCpuTicks += 4
 		}
@@ -857,7 +857,7 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x20:
 		// JR NZ,n
 		next := int8(gb.popPC())
-		if !gb.CPU.Z() {
+		if !gb.CPU.flagZ() {
 			addr := int32(gb.CPU.PC) + int32(next)
 			gb.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
@@ -865,7 +865,7 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x28:
 		// JR Z,n
 		next := int8(gb.popPC())
-		if gb.CPU.Z() {
+		if gb.CPU.flagZ() {
 			addr := int32(gb.CPU.PC) + int32(next)
 			gb.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
@@ -873,7 +873,7 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x30:
 		// JR NC,n
 		next := int8(gb.popPC())
-		if !gb.CPU.C() {
+		if !gb.CPU.flagC() {
 			addr := int32(gb.CPU.PC) + int32(next)
 			gb.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
@@ -881,7 +881,7 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0x38:
 		// JR C,n
 		next := int8(gb.popPC())
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			addr := int32(gb.CPU.PC) + int32(next)
 			gb.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
@@ -892,28 +892,28 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 	case 0xC4:
 		// CALL NZ,nn
 		next := gb.popPC16()
-		if !gb.CPU.Z() {
+		if !gb.CPU.flagZ() {
 			gb.instCall(next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xCC:
 		// CALL Z,nn
 		next := gb.popPC16()
-		if gb.CPU.Z() {
+		if gb.CPU.flagZ() {
 			gb.instCall(next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xD4:
 		// CALL NC,nn
 		next := gb.popPC16()
-		if !gb.CPU.C() {
+		if !gb.CPU.flagC() {
 			gb.instCall(next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xDC:
 		// CALL C,nn
 		next := gb.popPC16()
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			gb.instCall(next)
 			gb.thisCpuTicks += 12
 		}
@@ -946,25 +946,25 @@ func (gb *Gameboy) executeInstruction(opcode int) {
 		gb.instRet()
 	case 0xC0:
 		// RET NZ
-		if !gb.CPU.Z() {
+		if !gb.CPU.flagZ() {
 			gb.instRet()
 			gb.thisCpuTicks += 12
 		}
 	case 0xC8:
 		// RET Z
-		if gb.CPU.Z() {
+		if gb.CPU.flagZ() {
 			gb.instRet()
 			gb.thisCpuTicks += 12
 		}
 	case 0xD0:
 		// RET NC
-		if !gb.CPU.C() {
+		if !gb.CPU.flagC() {
 			gb.instRet()
 			gb.thisCpuTicks += 12
 		}
 	case 0xD8:
 		// RET C
-		if gb.CPU.C() {
+		if gb.CPU.flagC() {
 			gb.instRet()
 			gb.thisCpuTicks += 12
 		}
