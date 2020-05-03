@@ -99,34 +99,40 @@ func (cpu *CPU) getFlag(index int) bool {
 	return cpu.AF.value&mask != 0
 }
 
-func (cpu *CPU) setFlagZ(on bool) {
-	cpu.setFlag(7, on)
-}
+func (cpu *CPU) setFlagC(on bool) { cpu.setFlag(4, on) }
+func (cpu *CPU) setFlagH(on bool) { cpu.setFlag(5, on) }
+func (cpu *CPU) setFlagN(on bool) { cpu.setFlag(6, on) }
+func (cpu *CPU) setFlagZ(on bool) { cpu.setFlag(7, on) }
 
-func (cpu *CPU) setFlagN(on bool) {
-	cpu.setFlag(6, on)
-}
+func (cpu *CPU) flagC() bool { return cpu.getFlag(4) }
+func (cpu *CPU) flagH() bool { return cpu.getFlag(5) }
+func (cpu *CPU) flagN() bool { return cpu.getFlag(6) }
+func (cpu *CPU) flagZ() bool { return cpu.getFlag(7) }
 
-func (cpu *CPU) setFlagH(on bool) {
-	cpu.setFlag(5, on)
-}
+func (cpu *CPU) setA(val byte) { cpu.AF.SetHi(val) }
+func (cpu *CPU) setB(val byte) { cpu.BC.SetHi(val) }
+func (cpu *CPU) setC(val byte) { cpu.BC.SetLo(val) }
+func (cpu *CPU) setD(val byte) { cpu.DE.SetHi(val) }
+func (cpu *CPU) setE(val byte) { cpu.DE.SetLo(val) }
+func (cpu *CPU) setF(val byte) { cpu.AF.SetLo(val) }
+func (cpu *CPU) setH(val byte) { cpu.HL.SetHi(val) }
+func (cpu *CPU) setL(val byte) { cpu.HL.SetLo(val) }
 
-func (cpu *CPU) setFlagC(on bool) {
-	cpu.setFlag(4, on)
-}
+func (cpu *CPU) a() byte { return cpu.AF.Hi() }
+func (cpu *CPU) b() byte { return cpu.BC.Hi() }
+func (cpu *CPU) c() byte { return cpu.BC.Lo() }
+func (cpu *CPU) d() byte { return cpu.DE.Hi() }
+func (cpu *CPU) e() byte { return cpu.DE.Lo() }
+func (cpu *CPU) f() byte { return cpu.AF.Lo() }
+func (cpu *CPU) h() byte { return cpu.HL.Hi() }
+func (cpu *CPU) l() byte { return cpu.HL.Lo() }
 
-func (cpu *CPU) flagZ() bool {
-	return cpu.getFlag(7)
-}
+func (cpu *CPU) af() uint16 { return cpu.AF.HiLo() }
+func (cpu *CPU) bc() uint16 { return cpu.BC.HiLo() }
+func (cpu *CPU) de() uint16 { return cpu.DE.HiLo() }
+func (cpu *CPU) hl() uint16 { return cpu.HL.HiLo() }
 
-func (cpu *CPU) flagN() bool {
-	return cpu.getFlag(6)
-}
-
-func (cpu *CPU) flagH() bool {
-	return cpu.getFlag(5)
-}
-
-func (cpu *CPU) flagC() bool {
-	return cpu.getFlag(4)
-}
+func (cpu *CPU) setAf(val uint16) { cpu.AF.Set(val) }
+func (cpu *CPU) setBc(val uint16) { cpu.BC.Set(val) }
+func (cpu *CPU) setDe(val uint16) { cpu.DE.Set(val) }
+func (cpu *CPU) setHl(val uint16) { cpu.HL.Set(val) }
