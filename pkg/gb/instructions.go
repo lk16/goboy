@@ -137,11 +137,11 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		case 0x18:
 			gb.CPU.instSub(val, true)
 		case 0x20:
-			gb.instAnd(gb.CPU.setA, a, val)
+			gb.CPU.instAnd(val)
 		case 0x28:
-			gb.instXor(gb.CPU.setA, a, val)
+			gb.CPU.instXor(val)
 		case 0x30:
-			gb.instOr(gb.CPU.setA, a, val)
+			gb.CPU.instOr(val)
 		case 0x38:
 			gb.instCp(val, a)
 		}
@@ -241,11 +241,11 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		case 0xDE:
 			gb.CPU.instSub(pc, true)
 		case 0xE6:
-			gb.instAnd(gb.CPU.setA, pc, a)
+			gb.CPU.instAnd(pc)
 		case 0xEE:
-			gb.instXor(gb.CPU.setA, pc, a)
+			gb.CPU.instXor(pc)
 		case 0xF6:
-			gb.instOr(gb.CPU.setA, pc, a)
+			gb.CPU.instOr(pc)
 		case 0xFE:
 			gb.instCp(pc, a)
 		}

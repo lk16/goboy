@@ -37,37 +37,40 @@ func (cpu *CPU) instSub(val2 byte, addCarry bool) {
 	cpu.setFlagC(dirtySum < 0)
 }
 
-// Perform a AND operation on two values and store the result using the set function.
-// Will also update the CPU flags using the result of the operation.
-func (gb *Gameboy) instAnd(set func(byte), val1 byte, val2 byte) {
-	total := val1 & val2
-	set(total)
-	gb.CPU.setFlagZ(total == 0)
-	gb.CPU.setFlagN(false)
-	gb.CPU.setFlagH(true)
-	gb.CPU.setFlagC(false)
+// instAnd performs an AND instruction on the A register and another value and stores the result in A.
+// It will also update the CPU flags using the result of the operation.
+func (cpu *CPU) instAnd(val2 byte) {
+
+	total := cpu.a() & val2
+	cpu.setA(total)
+
+	cpu.setFlagZ(total == 0)
+	cpu.setFlagN(false)
+	cpu.setFlagH(true)
+	cpu.setFlagC(false)
 }
 
-// Perform an OR operation on two values and store the result using the set function.
-// Will also update the CPU flags using the result of the operation.
-func (gb *Gameboy) instOr(set func(byte), val1 byte, val2 byte) {
-	total := val1 | val2
-	set(total)
-	gb.CPU.setFlagZ(total == 0)
-	gb.CPU.setFlagN(false)
-	gb.CPU.setFlagH(false)
-	gb.CPU.setFlagC(false)
+// instOr performs an OR instruction on the A register and another value and stores the result in A.
+// It will also update the CPU flags using the result of the operation.
+func (cpu *CPU) instOr(val2 byte) {
+	total := cpu.a() | val2
+	cpu.setA(total)
+
+	cpu.setFlagZ(total == 0)
+	cpu.setFlagN(false)
+	cpu.setFlagH(false)
+	cpu.setFlagC(false)
 }
 
-// Perform an XOR operation on two values and store the result using the set function.
-// Will also update the CPU flags using the result of the operation.
-func (gb *Gameboy) instXor(set func(byte), val1 byte, val2 byte) {
-	total := val1 ^ val2
-	set(total)
-	gb.CPU.setFlagZ(total == 0)
-	gb.CPU.setFlagN(false)
-	gb.CPU.setFlagH(false)
-	gb.CPU.setFlagC(false)
+// instXor performs an XOR instruction on the A register and another value and stores the result in A.
+// It will also update the CPU flags using the result of the operation.
+func (cpu *CPU) instXor(val2 byte) {
+	total := cpu.a() ^ val2
+	cpu.setA(total)
+	cpu.setFlagZ(total == 0)
+	cpu.setFlagN(false)
+	cpu.setFlagH(false)
+	cpu.setFlagC(false)
 }
 
 // Perform a CP operation on two values. Will set the flags from the result of the
