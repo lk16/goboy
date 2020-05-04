@@ -45,20 +45,18 @@ var CBOpcodeCycles = []int{
 // executeNextOpcode gets the value at the current PC address, increments the PC,
 // updates the CPU ticks and executes the opcode.
 func (gb *Gameboy) executeNextOpcode() int {
-	opcode := uint(gb.popPC())
+	opcode := uint(gb.CPU.popPC(gb.Memory))
 	gb.thisCpuTicks = OpcodeCycles[opcode] * 4
-	gb.executeInstruction(opcode)
+	executeInstruction(gb, gb.CPU, gb.Memory, opcode)
 	return gb.thisCpuTicks
 }
 
-func (gb *Gameboy) executeInstruction(opcode uint) {
+func executeInstruction(gb *Gameboy, cpu *CPU, mem *Memory, opcode uint) {
 
 	opcode &= 0xFF
 
 	if opcode == 0x76 {
-		// HALT
 		gb.halted = true
-		return
 	}
 
 	switch opcode & 0xC0 {
@@ -67,40 +65,40 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 		switch opcode & 0x07 {
 		case 0x00:
-			val = gb.CPU.b()
+			val = cpu.b()
 		case 0x01:
-			val = gb.CPU.c()
+			val = cpu.c()
 		case 0x02:
-			val = gb.CPU.d()
+			val = cpu.d()
 		case 0x03:
-			val = gb.CPU.e()
+			val = cpu.e()
 		case 0x04:
-			val = gb.CPU.h()
+			val = cpu.h()
 		case 0x05:
-			val = gb.CPU.l()
+			val = cpu.l()
 		case 0x06:
-			val = gb.Memory.Read(gb.CPU.hl())
+			val = mem.Read(cpu.hl())
 		case 0x07:
-			val = gb.CPU.a()
+			val = cpu.a()
 		}
 
 		switch opcode & 0x38 {
 		case 0x00:
-			gb.CPU.setB(val)
+			cpu.setB(val)
 		case 0x08:
-			gb.CPU.setC(val)
+			cpu.setC(val)
 		case 0x10:
-			gb.CPU.setD(val)
+			cpu.setD(val)
 		case 0x18:
-			gb.CPU.setE(val)
+			cpu.setE(val)
 		case 0x20:
-			gb.CPU.setH(val)
+			cpu.setH(val)
 		case 0x28:
-			gb.CPU.setL(val)
+			cpu.setL(val)
 		case 0x30:
-			gb.Memory.Write(gb.CPU.hl(), val)
+			mem.Write(cpu.hl(), val)
 		case 0x38:
-			gb.CPU.setA(val)
+			cpu.setA(val)
 		}
 		return
 	case 0x80:
@@ -108,42 +106,40 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 		switch opcode & 0x07 {
 		case 0x00:
-			val = gb.CPU.b()
+			val = cpu.b()
 		case 0x01:
-			val = gb.CPU.c()
+			val = cpu.c()
 		case 0x02:
-			val = gb.CPU.d()
+			val = cpu.d()
 		case 0x03:
-			val = gb.CPU.e()
+			val = cpu.e()
 		case 0x04:
-			val = gb.CPU.h()
+			val = cpu.h()
 		case 0x05:
-			val = gb.CPU.l()
+			val = cpu.l()
 		case 0x06:
-			val = gb.Memory.Read(gb.CPU.hl())
+			val = mem.Read(cpu.hl())
 		case 0x07:
-			val = gb.CPU.a()
+			val = cpu.a()
 		}
-
-		a := gb.CPU.a()
 
 		switch opcode & 0x38 {
 		case 0x00:
-			gb.CPU.instAdd(val, false)
+			cpu.instAdd(val, false)
 		case 0x08:
-			gb.CPU.instAdd(val, true)
+			cpu.instAdd(val, true)
 		case 0x10:
-			gb.CPU.instSub(val, false)
+			cpu.instSub(val, false)
 		case 0x18:
-			gb.CPU.instSub(val, true)
+			cpu.instSub(val, true)
 		case 0x20:
-			gb.CPU.instAnd(val)
+			cpu.instAnd(val)
 		case 0x28:
-			gb.CPU.instXor(val)
+			cpu.instXor(val)
 		case 0x30:
-			gb.CPU.instOr(val)
+			cpu.instOr(val)
 		case 0x38:
-			gb.instCp(val, a)
+			cpu.instCp(val)
 		}
 		return
 
@@ -155,47 +151,47 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 		switch opcode {
 		case 0x02:
-			addr = gb.CPU.bc()
+			addr = cpu.bc()
 		case 0x12:
-			addr = gb.CPU.de()
+			addr = cpu.de()
 		case 0x22:
 			fallthrough
 		case 0x32:
-			addr = gb.CPU.hl()
+			addr = cpu.hl()
 		}
 
-		gb.Memory.Write(addr, gb.CPU.a())
+		mem.Write(addr, cpu.a())
 
 		switch opcode {
 		case 0x22:
-			gb.CPU.setHl(gb.CPU.hl() + 1)
+			cpu.setHl(cpu.hl() + 1)
 		case 0x32:
-			gb.CPU.setHl(gb.CPU.hl() - 1)
+			cpu.setHl(cpu.hl() - 1)
 		}
 		return
 	}
 
 	if opcode&0xC7 == 0x06 {
 
-		pc := gb.popPC()
+		pc := cpu.popPC(mem)
 
 		switch opcode {
 		case 0x06:
-			gb.CPU.setB(pc)
+			cpu.setB(pc)
 		case 0x0E:
-			gb.CPU.setC(pc)
+			cpu.setC(pc)
 		case 0x16:
-			gb.CPU.setD(pc)
+			cpu.setD(pc)
 		case 0x1E:
-			gb.CPU.setE(pc)
+			cpu.setE(pc)
 		case 0x26:
-			gb.CPU.setH(pc)
+			cpu.setH(pc)
 		case 0x2E:
-			gb.CPU.setL(pc)
+			cpu.setL(pc)
 		case 0x3E:
-			gb.CPU.setA(pc)
+			cpu.setA(pc)
 		case 0x36:
-			gb.Memory.Write(gb.CPU.hl(), pc)
+			mem.Write(cpu.hl(), pc)
 		}
 		return
 	}
@@ -206,48 +202,47 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 		switch opcode {
 		case 0x0A:
-			val = gb.Memory.Read(gb.CPU.bc())
+			val = mem.Read(cpu.bc())
 		case 0x1A:
-			val = gb.Memory.Read(gb.CPU.de())
+			val = mem.Read(cpu.de())
 		case 0x2A:
-			val = gb.Memory.Read(gb.CPU.hl())
+			val = mem.Read(cpu.hl())
 		case 0x3A:
-			val = gb.Memory.Read(gb.CPU.hl())
+			val = mem.Read(cpu.hl())
 		}
 
-		gb.CPU.setA(val)
+		cpu.setA(val)
 
 		switch opcode {
 		case 0x3A:
-			gb.CPU.setHl(gb.CPU.hl() - 1)
+			cpu.setHl(cpu.hl() - 1)
 		case 0x2A:
-			gb.CPU.setHl(gb.CPU.hl() + 1)
+			cpu.setHl(cpu.hl() + 1)
 		}
 		return
 	}
 
 	if opcode&0xC7 == 0xC6 {
 
-		pc := gb.popPC()
-		a := gb.CPU.a()
+		pc := cpu.popPC(mem)
 
 		switch opcode {
 		case 0xC6:
-			gb.CPU.instAdd(pc, false)
+			cpu.instAdd(pc, false)
 		case 0xCE:
-			gb.CPU.instAdd(pc, true)
+			cpu.instAdd(pc, true)
 		case 0xD6:
-			gb.CPU.instSub(pc, false)
+			cpu.instSub(pc, false)
 		case 0xDE:
-			gb.CPU.instSub(pc, true)
+			cpu.instSub(pc, true)
 		case 0xE6:
-			gb.CPU.instAnd(pc)
+			cpu.instAnd(pc)
 		case 0xEE:
-			gb.CPU.instXor(pc)
+			cpu.instXor(pc)
 		case 0xF6:
-			gb.CPU.instOr(pc)
+			cpu.instOr(pc)
 		case 0xFE:
-			gb.instCp(pc, a)
+			cpu.instCp(pc)
 		}
 		return
 	}
@@ -256,176 +251,176 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 	case 0xFA:
 		// LD A,(nn)
-		val := gb.Memory.Read(gb.popPC16())
-		gb.CPU.setA(val)
+		val := mem.Read(cpu.popPC16(mem))
+		cpu.setA(val)
 	case 0xEA:
 		// LD (nn),A
-		val := gb.CPU.a()
-		gb.Memory.Write(gb.popPC16(), val)
+		val := cpu.a()
+		mem.Write(cpu.popPC16(mem), val)
 	case 0xF2:
 		// LD A,(C)
-		val := 0xFF00 + uint16(gb.CPU.c())
-		gb.CPU.setA(gb.Memory.Read(val))
+		val := 0xFF00 + uint16(cpu.c())
+		cpu.setA(mem.Read(val))
 	case 0xE2:
 		// LD (C),A
-		val := gb.CPU.a()
-		mem := 0xFF00 + uint16(gb.CPU.c())
-		gb.Memory.Write(mem, val)
+		val := cpu.a()
+		addr := 0xFF00 + uint16(cpu.c())
+		mem.Write(addr, val)
 
 	case 0xE0:
 		// LD (0xFF00+n),A
-		val := 0xFF00 + uint16(gb.popPC())
-		gb.Memory.Write(val, gb.CPU.a())
+		val := 0xFF00 + uint16(cpu.popPC(mem))
+		mem.Write(val, cpu.a())
 	case 0xF0:
 		// LD A,(0xFF00+n)
-		val := gb.Memory.ReadHighRam(0xFF00 + uint16(gb.popPC()))
-		gb.CPU.setA(val)
+		val := mem.ReadHighRam(0xFF00 + uint16(cpu.popPC(mem)))
+		cpu.setA(val)
 	// ========== 16-Bit Loads ===========
 	case 0x01:
 		// LD BC,nn
-		val := gb.popPC16()
-		gb.CPU.setBc(val)
+		val := cpu.popPC16(mem)
+		cpu.setBc(val)
 	case 0x11:
 		// LD DE,nn
-		val := gb.popPC16()
-		gb.CPU.setDe(val)
+		val := cpu.popPC16(mem)
+		cpu.setDe(val)
 	case 0x21:
 		// LD HL,nn
-		val := gb.popPC16()
-		gb.CPU.setHl(val)
+		val := cpu.popPC16(mem)
+		cpu.setHl(val)
 	case 0x31:
 		// LD SP,nn
-		val := gb.popPC16()
-		gb.CPU.setSp(val)
+		val := cpu.popPC16(mem)
+		cpu.setSp(val)
 	case 0xF9:
 		// LD SP,HL
-		val := gb.CPU.hl()
-		gb.CPU.setSp(val)
+		val := cpu.hl()
+		cpu.setSp(val)
 	case 0xF8:
 		// LD HL,SP+n
-		gb.instAdd16Signed(gb.CPU.setHl, gb.CPU.sp(), int8(gb.popPC()))
+		cpu.instAdd16Signed(cpu.setHl, cpu.sp(), int8(cpu.popPC(mem)))
 	case 0x08:
 		// LD (nn),SP
-		address := gb.popPC16()
-		gb.Memory.Write(address, gb.CPU.spLo())
-		gb.Memory.Write(address+1, gb.CPU.spHi())
+		address := cpu.popPC16(mem)
+		mem.Write(address, cpu.spLo())
+		mem.Write(address+1, cpu.spHi())
 	case 0xF5:
 		// PUSH AF
-		gb.pushStack(gb.CPU.af())
+		cpu.pushStack(mem, cpu.af())
 	case 0xC5:
 		// PUSH BC
-		gb.pushStack(gb.CPU.bc())
+		cpu.pushStack(mem, cpu.bc())
 	case 0xD5:
 		// PUSH DE
-		gb.pushStack(gb.CPU.de())
+		cpu.pushStack(mem, cpu.de())
 	case 0xE5:
 		// PUSH HL
-		gb.pushStack(gb.CPU.hl())
+		cpu.pushStack(mem, cpu.hl())
 	case 0xF1:
 		// POP AF
-		gb.CPU.setAf(gb.popStack())
+		cpu.setAf(cpu.popStack(mem))
 	case 0xC1:
 		// POP BC
-		gb.CPU.setBc(gb.popStack())
+		cpu.setBc(cpu.popStack(mem))
 	case 0xD1:
 		// POP DE
-		gb.CPU.setDe(gb.popStack())
+		cpu.setDe(cpu.popStack(mem))
 	case 0xE1:
 		// POP HL
-		gb.CPU.setHl(gb.popStack())
+		cpu.setHl(cpu.popStack(mem))
 	// ========== 8-Bit ALU ===========
 
 	case 0x3C:
 		// INC A
-		gb.instInc(gb.CPU.setA, gb.CPU.a())
+		cpu.instInc(cpu.setA, cpu.a())
 	case 0x04:
 		// INC B
-		gb.instInc(gb.CPU.setB, gb.CPU.b())
+		cpu.instInc(cpu.setB, cpu.b())
 	case 0x0C:
 		// INC C
-		gb.instInc(gb.CPU.setC, gb.CPU.c())
+		cpu.instInc(cpu.setC, cpu.c())
 	case 0x14:
 		// INC D
-		gb.instInc(gb.CPU.setD, gb.CPU.d())
+		cpu.instInc(cpu.setD, cpu.d())
 	case 0x1C:
 		// INC E
-		gb.instInc(gb.CPU.setE, gb.CPU.e())
+		cpu.instInc(cpu.setE, cpu.e())
 	case 0x24:
 		// INC H
-		gb.instInc(gb.CPU.setH, gb.CPU.h())
+		cpu.instInc(cpu.setH, cpu.h())
 	case 0x2C:
 		// INC L
-		gb.instInc(gb.CPU.setL, gb.CPU.l())
+		cpu.instInc(cpu.setL, cpu.l())
 	case 0x34:
 		// INC (HL)
-		addr := gb.CPU.hl()
-		gb.instInc(func(val byte) { gb.Memory.Write(addr, val) }, gb.Memory.Read(addr))
+		addr := cpu.hl()
+		cpu.instInc(func(val byte) { mem.Write(addr, val) }, mem.Read(addr))
 	case 0x3D:
 		// DEC A
-		gb.instDec(gb.CPU.setA, gb.CPU.a())
+		cpu.instDec(cpu.setA, cpu.a())
 	case 0x05:
 		// DEC B
-		gb.instDec(gb.CPU.setB, gb.CPU.b())
+		cpu.instDec(cpu.setB, cpu.b())
 	case 0x0D:
 		// DEC C
-		gb.instDec(gb.CPU.setC, gb.CPU.c())
+		cpu.instDec(cpu.setC, cpu.c())
 	case 0x15:
 		// DEC D
-		gb.instDec(gb.CPU.setD, gb.CPU.d())
+		cpu.instDec(cpu.setD, cpu.d())
 	case 0x1D:
 		// DEC E
-		gb.instDec(gb.CPU.setE, gb.CPU.e())
+		cpu.instDec(cpu.setE, cpu.e())
 	case 0x25:
 		// DEC H
-		gb.instDec(gb.CPU.setH, gb.CPU.h())
+		cpu.instDec(cpu.setH, cpu.h())
 	case 0x2D:
 		// DEC L
-		gb.instDec(gb.CPU.setL, gb.CPU.l())
+		cpu.instDec(cpu.setL, cpu.l())
 	case 0x35:
 		// DEC (HL)
-		addr := gb.CPU.hl()
-		gb.instDec(func(val byte) { gb.Memory.Write(addr, val) }, gb.Memory.Read(addr))
+		addr := cpu.hl()
+		cpu.instDec(func(val byte) { mem.Write(addr, val) }, mem.Read(addr))
 		// ========== 16-Bit ALU ===========
 	case 0x09:
 		// ADD HL,BC
-		gb.instAdd16(gb.CPU.setHl, gb.CPU.hl(), gb.CPU.bc())
+		cpu.instAdd16(cpu.setHl, cpu.hl(), cpu.bc())
 	case 0x19:
 		// ADD HL,DE
-		gb.instAdd16(gb.CPU.setHl, gb.CPU.hl(), gb.CPU.de())
+		cpu.instAdd16(cpu.setHl, cpu.hl(), cpu.de())
 	case 0x29:
 		// ADD HL,HL
-		gb.instAdd16(gb.CPU.setHl, gb.CPU.hl(), gb.CPU.hl())
+		cpu.instAdd16(cpu.setHl, cpu.hl(), cpu.hl())
 	case 0x39:
 		// ADD HL,SP
-		gb.instAdd16(gb.CPU.setHl, gb.CPU.hl(), gb.CPU.sp())
+		cpu.instAdd16(cpu.setHl, cpu.hl(), cpu.sp())
 	case 0xE8:
 		// ADD SP,n
-		gb.instAdd16Signed(gb.CPU.setSp, gb.CPU.sp(), int8(gb.popPC()))
-		gb.CPU.setFlagZ(false)
+		cpu.instAdd16Signed(cpu.setSp, cpu.sp(), int8(cpu.popPC(mem)))
+		cpu.setFlagZ(false)
 	case 0x03:
 		// INC BC
-		gb.instInc16(gb.CPU.setBc, gb.CPU.bc())
+		cpu.instInc16(cpu.setBc, cpu.bc())
 	case 0x13:
 		// INC DE
-		gb.instInc16(gb.CPU.setDe, gb.CPU.de())
+		cpu.instInc16(cpu.setDe, cpu.de())
 	case 0x23:
 		// INC HL
-		gb.instInc16(gb.CPU.setHl, gb.CPU.hl())
+		cpu.instInc16(cpu.setHl, cpu.hl())
 	case 0x33:
 		// INC SP
-		gb.instInc16(gb.CPU.setSp, gb.CPU.sp())
+		cpu.instInc16(cpu.setSp, cpu.sp())
 	case 0x0B:
 		// DEC BC
-		gb.instDec16(gb.CPU.setBc, gb.CPU.bc())
+		cpu.instDec16(cpu.setBc, cpu.bc())
 	case 0x1B:
 		// DEC DE
-		gb.instDec16(gb.CPU.setDe, gb.CPU.de())
+		cpu.instDec16(cpu.setDe, cpu.de())
 	case 0x2B:
 		// DEC HL
-		gb.instDec16(gb.CPU.setHl, gb.CPU.hl())
+		cpu.instDec16(cpu.setHl, cpu.hl())
 	case 0x3B:
 		// DEC SP
-		gb.instDec16(gb.CPU.setSp, gb.CPU.sp())
+		cpu.instDec16(cpu.setSp, cpu.sp())
 	case 0x27:
 		// DAA
 
@@ -437,40 +432,40 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		// four most significant bits are checked. If this more significant
 		// digit also happens to be greater than 9 or the C flag is set,
 		// then 0x60 is added.
-		if !gb.CPU.flagN() {
-			if gb.CPU.flagC() || gb.CPU.a() > 0x99 {
-				gb.CPU.setA(gb.CPU.a() + 0x60)
-				gb.CPU.setFlagC(true)
+		if !cpu.flagN() {
+			if cpu.flagC() || cpu.a() > 0x99 {
+				cpu.setA(cpu.a() + 0x60)
+				cpu.setFlagC(true)
 			}
-			if gb.CPU.flagH() || gb.CPU.a()&0xF > 0x9 {
-				gb.CPU.setA(gb.CPU.a() + 0x06)
-				gb.CPU.setFlagH(false)
+			if cpu.flagH() || cpu.a()&0xF > 0x9 {
+				cpu.setA(cpu.a() + 0x06)
+				cpu.setFlagH(false)
 			}
-		} else if gb.CPU.flagC() && gb.CPU.flagH() {
-			gb.CPU.setA(gb.CPU.a() + 0x9A)
-			gb.CPU.setFlagH(false)
-		} else if gb.CPU.flagC() {
-			gb.CPU.setA(gb.CPU.a() + 0xA0)
-		} else if gb.CPU.flagH() {
-			gb.CPU.setA(gb.CPU.a() + 0xFA)
-			gb.CPU.setFlagH(false)
+		} else if cpu.flagC() && cpu.flagH() {
+			cpu.setA(cpu.a() + 0x9A)
+			cpu.setFlagH(false)
+		} else if cpu.flagC() {
+			cpu.setA(cpu.a() + 0xA0)
+		} else if cpu.flagH() {
+			cpu.setA(cpu.a() + 0xFA)
+			cpu.setFlagH(false)
 		}
-		gb.CPU.setFlagZ(gb.CPU.a() == 0)
+		cpu.setFlagZ(cpu.a() == 0)
 	case 0x2F:
 		// CPL
-		gb.CPU.setA(0xFF ^ gb.CPU.a())
-		gb.CPU.setFlagN(true)
-		gb.CPU.setFlagH(true)
+		cpu.setA(0xFF ^ cpu.a())
+		cpu.setFlagN(true)
+		cpu.setFlagH(true)
 	case 0x3F:
 		// CCF
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC(!gb.CPU.flagC())
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC(!cpu.flagC())
 	case 0x37:
 		// SCF
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC(true)
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC(true)
 	case 0x00:
 		// NOP
 	case 0x76:
@@ -487,7 +482,7 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		// Pop the next value as the STOP instruction is 2 bytes long. The second value
 		// can be ignored, although generally it is expected to be 0x00 and any other
 		// value is counted as a corrupted STOP instruction.
-		gb.popPC()
+		cpu.popPC(mem)
 	case 0xF3:
 		// DI
 		gb.interruptsOn = false
@@ -496,207 +491,207 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 		gb.interruptsEnabling = true
 	case 0x07:
 		// RLCA
-		value := gb.CPU.a()
+		value := cpu.a()
 		result := byte(value<<1) | (value >> 7)
-		gb.CPU.setA(result)
-		gb.CPU.setFlagZ(false)
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC(value > 0x7F)
+		cpu.setA(result)
+		cpu.setFlagZ(false)
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC(value > 0x7F)
 	case 0x17:
 		// RLA
-		value := gb.CPU.a()
+		value := cpu.a()
 		var carry byte
-		if gb.CPU.flagC() {
+		if cpu.flagC() {
 			carry = 1
 		}
 		result := byte(value<<1) + carry
-		gb.CPU.setA(result)
-		gb.CPU.setFlagZ(false)
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC(value > 0x7F)
+		cpu.setA(result)
+		cpu.setFlagZ(false)
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC(value > 0x7F)
 	case 0x0F:
 		// RRCA
-		value := gb.CPU.a()
+		value := cpu.a()
 		result := byte(value>>1) | byte((value&1)<<7)
-		gb.CPU.setA(result)
-		gb.CPU.setFlagZ(false)
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC(result > 0x7F)
+		cpu.setA(result)
+		cpu.setFlagZ(false)
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC(result > 0x7F)
 	case 0x1F:
 		// RRA
-		value := gb.CPU.a()
+		value := cpu.a()
 		var carry byte
-		if gb.CPU.flagC() {
+		if cpu.flagC() {
 			carry = 0x80
 		}
 		result := byte(value>>1) | carry
-		gb.CPU.setA(result)
-		gb.CPU.setFlagZ(false)
-		gb.CPU.setFlagN(false)
-		gb.CPU.setFlagH(false)
-		gb.CPU.setFlagC((1 & value) == 1)
+		cpu.setA(result)
+		cpu.setFlagZ(false)
+		cpu.setFlagN(false)
+		cpu.setFlagH(false)
+		cpu.setFlagC((1 & value) == 1)
 	case 0xC3:
 		// JP nn
-		gb.instJump(gb.popPC16())
+		cpu.instJump(cpu.popPC16(mem))
 	case 0xC2:
 		// JP NZ,nn
-		next := gb.popPC16()
-		if !gb.CPU.flagZ() {
-			gb.instJump(next)
+		next := cpu.popPC16(mem)
+		if !cpu.flagZ() {
+			cpu.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xCA:
 		// JP Z,nn
-		next := gb.popPC16()
-		if gb.CPU.flagZ() {
-			gb.instJump(next)
+		next := cpu.popPC16(mem)
+		if cpu.flagZ() {
+			cpu.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xD2:
 		// JP NC,nn
-		next := gb.popPC16()
-		if !gb.CPU.flagC() {
-			gb.instJump(next)
+		next := cpu.popPC16(mem)
+		if !cpu.flagC() {
+			cpu.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xDA:
 		// JP C,nn
-		next := gb.popPC16()
-		if gb.CPU.flagC() {
-			gb.instJump(next)
+		next := cpu.popPC16(mem)
+		if cpu.flagC() {
+			cpu.instJump(next)
 			gb.thisCpuTicks += 4
 		}
 	case 0xE9:
 		// JP HL
-		gb.instJump(gb.CPU.hl())
+		cpu.instJump(cpu.hl())
 	case 0x18:
 		// JR n
-		addr := int32(gb.CPU.PC) + int32(int8(gb.popPC()))
-		gb.instJump(uint16(addr))
+		addr := int32(cpu.PC) + int32(int8(cpu.popPC(mem)))
+		cpu.instJump(uint16(addr))
 	case 0x20:
 		// JR NZ,n
-		next := int8(gb.popPC())
-		if !gb.CPU.flagZ() {
-			addr := int32(gb.CPU.PC) + int32(next)
-			gb.instJump(uint16(addr))
+		next := int8(cpu.popPC(mem))
+		if !cpu.flagZ() {
+			addr := int32(cpu.PC) + int32(next)
+			cpu.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
 		}
 	case 0x28:
 		// JR Z,n
-		next := int8(gb.popPC())
-		if gb.CPU.flagZ() {
-			addr := int32(gb.CPU.PC) + int32(next)
-			gb.instJump(uint16(addr))
+		next := int8(cpu.popPC(mem))
+		if cpu.flagZ() {
+			addr := int32(cpu.PC) + int32(next)
+			cpu.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
 		}
 	case 0x30:
 		// JR NC,n
-		next := int8(gb.popPC())
-		if !gb.CPU.flagC() {
-			addr := int32(gb.CPU.PC) + int32(next)
-			gb.instJump(uint16(addr))
+		next := int8(cpu.popPC(mem))
+		if !cpu.flagC() {
+			addr := int32(cpu.PC) + int32(next)
+			cpu.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
 		}
 	case 0x38:
 		// JR C,n
-		next := int8(gb.popPC())
-		if gb.CPU.flagC() {
-			addr := int32(gb.CPU.PC) + int32(next)
-			gb.instJump(uint16(addr))
+		next := int8(cpu.popPC(mem))
+		if cpu.flagC() {
+			addr := int32(cpu.PC) + int32(next)
+			cpu.instJump(uint16(addr))
 			gb.thisCpuTicks += 4
 		}
 	case 0xCD:
 		// CALL nn
-		gb.instCall(gb.popPC16())
+		cpu.instCall(mem, cpu.popPC16(mem))
 	case 0xC4:
 		// CALL NZ,nn
-		next := gb.popPC16()
-		if !gb.CPU.flagZ() {
-			gb.instCall(next)
+		next := cpu.popPC16(mem)
+		if !cpu.flagZ() {
+			cpu.instCall(mem, next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xCC:
 		// CALL Z,nn
-		next := gb.popPC16()
-		if gb.CPU.flagZ() {
-			gb.instCall(next)
+		next := cpu.popPC16(mem)
+		if cpu.flagZ() {
+			cpu.instCall(mem, next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xD4:
 		// CALL NC,nn
-		next := gb.popPC16()
-		if !gb.CPU.flagC() {
-			gb.instCall(next)
+		next := cpu.popPC16(mem)
+		if !cpu.flagC() {
+			cpu.instCall(mem, next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xDC:
 		// CALL C,nn
-		next := gb.popPC16()
-		if gb.CPU.flagC() {
-			gb.instCall(next)
+		next := cpu.popPC16(mem)
+		if cpu.flagC() {
+			cpu.instCall(mem, next)
 			gb.thisCpuTicks += 12
 		}
 	case 0xC7:
 		// RST 0x00
-		gb.instCall(0x0000)
+		cpu.instCall(mem, 0x0000)
 	case 0xCF:
 		// RST 0x08
-		gb.instCall(0x0008)
+		cpu.instCall(mem, 0x0008)
 	case 0xD7:
 		// RST 0x10
-		gb.instCall(0x0010)
+		cpu.instCall(mem, 0x0010)
 	case 0xDF:
 		// RST 0x18
-		gb.instCall(0x0018)
+		cpu.instCall(mem, 0x0018)
 	case 0xE7:
 		// RST 0x20
-		gb.instCall(0x0020)
+		cpu.instCall(mem, 0x0020)
 	case 0xEF:
 		// RST 0x28
-		gb.instCall(0x0028)
+		cpu.instCall(mem, 0x0028)
 	case 0xF7:
 		// RST 0x30
-		gb.instCall(0x0030)
+		cpu.instCall(mem, 0x0030)
 	case 0xFF:
 		// RST 0x38
-		gb.instCall(0x0038)
+		cpu.instCall(mem, 0x0038)
 	case 0xC9:
 		// RET
-		gb.instRet()
+		cpu.instRet(mem)
 	case 0xC0:
 		// RET NZ
-		if !gb.CPU.flagZ() {
-			gb.instRet()
+		if !cpu.flagZ() {
+			cpu.instRet(mem)
 			gb.thisCpuTicks += 12
 		}
 	case 0xC8:
 		// RET Z
-		if gb.CPU.flagZ() {
-			gb.instRet()
+		if cpu.flagZ() {
+			cpu.instRet(mem)
 			gb.thisCpuTicks += 12
 		}
 	case 0xD0:
 		// RET NC
-		if !gb.CPU.flagC() {
-			gb.instRet()
+		if !cpu.flagC() {
+			cpu.instRet(mem)
 			gb.thisCpuTicks += 12
 		}
 	case 0xD8:
 		// RET C
-		if gb.CPU.flagC() {
-			gb.instRet()
+		if cpu.flagC() {
+			cpu.instRet(mem)
 			gb.thisCpuTicks += 12
 		}
 	case 0xD9:
 		// RETI
-		gb.instRet()
+		cpu.instRet(mem)
 		gb.interruptsEnabling = true
 	case 0xCB:
 		// CB
-		nextInst := gb.popPC()
+		nextInst := cpu.popPC(mem)
 		gb.thisCpuTicks += CBOpcodeCycles[nextInst] * 4
 		gb.cbInst[nextInst]()
 	default:
@@ -705,15 +700,15 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 }
 
 // Read the value at the PC and increment the PC.
-func (gb *Gameboy) popPC() byte {
-	opcode := gb.Memory.Read(gb.CPU.PC)
-	gb.CPU.PC++
+func (cpu *CPU) popPC(mem *Memory) byte {
+	opcode := mem.Read(cpu.PC)
+	cpu.PC++
 	return opcode
 }
 
 // Read the next 16bit value at the PC.
-func (gb *Gameboy) popPC16() uint16 {
-	b1 := uint16(gb.popPC())
-	b2 := uint16(gb.popPC())
+func (cpu *CPU) popPC16(mem *Memory) uint16 {
+	b1 := uint16(cpu.popPC(mem))
+	b2 := uint16(cpu.popPC(mem))
 	return b2<<8 | b1
 }
