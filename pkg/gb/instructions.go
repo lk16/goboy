@@ -125,23 +125,25 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 			val = gb.CPU.a()
 		}
 
+		a := gb.CPU.a()
+
 		switch opcode & 0x38 {
 		case 0x00:
-			gb.instAdd(gb.CPU.setA, val, gb.CPU.a(), false)
+			gb.CPU.instAdd(val, false)
 		case 0x08:
-			gb.instAdd(gb.CPU.setA, val, gb.CPU.a(), true)
+			gb.CPU.instAdd(val, true)
 		case 0x10:
-			gb.instSub(gb.CPU.setA, gb.CPU.a(), val, false)
+			gb.CPU.instSub(val, false)
 		case 0x18:
-			gb.instSub(gb.CPU.setA, gb.CPU.a(), val, true)
+			gb.CPU.instSub(val, true)
 		case 0x20:
-			gb.instAnd(gb.CPU.setA, val, gb.CPU.a())
+			gb.instAnd(gb.CPU.setA, a, val)
 		case 0x28:
-			gb.instXor(gb.CPU.setA, val, gb.CPU.a())
+			gb.instXor(gb.CPU.setA, a, val)
 		case 0x30:
-			gb.instOr(gb.CPU.setA, val, gb.CPU.a())
+			gb.instOr(gb.CPU.setA, a, val)
 		case 0x38:
-			gb.instCp(val, gb.CPU.a())
+			gb.instCp(val, a)
 		}
 		return
 
@@ -231,13 +233,13 @@ func (gb *Gameboy) executeInstruction(opcode uint) {
 
 		switch opcode {
 		case 0xC6:
-			gb.instAdd(gb.CPU.setA, pc, a, false)
+			gb.CPU.instAdd(pc, false)
 		case 0xCE:
-			gb.instAdd(gb.CPU.setA, pc, a, true)
+			gb.CPU.instAdd(pc, true)
 		case 0xD6:
-			gb.instSub(gb.CPU.setA, a, pc, false)
+			gb.CPU.instSub(pc, false)
 		case 0xDE:
-			gb.instSub(gb.CPU.setA, a, pc, true)
+			gb.CPU.instSub(pc, true)
 		case 0xE6:
 			gb.instAnd(gb.CPU.setA, pc, a)
 		case 0xEE:

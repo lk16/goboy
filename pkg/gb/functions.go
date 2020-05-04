@@ -4,31 +4,37 @@ import (
 	"github.com/Humpheh/goboy/pkg/bits"
 )
 
-// Perform a ADD instruction on the values and store the value using the set
-// function. Will also update the CPU flags using the result of the operation.
-func (gb *Gameboy) instAdd(set func(byte), val1 byte, val2 byte, addCarry bool) {
-	carry := int16(bits.B(gb.CPU.flagC() && addCarry))
-	total := int16(val1) + int16(val2) + carry
-	set(byte(total))
+// instAdd performs a ADD instruction on the A register and another value and stores the result in A.
+// It will also update the CPU flags using the result of the operation.
+func (cpu *CPU) instAdd(val2 byte, addCarry bool) {
 
-	gb.CPU.setFlagZ(byte(total) == 0)
-	gb.CPU.setFlagN(false)
-	gb.CPU.setFlagH((val2&0xF)+(val1&0xF)+byte(carry) > 0xF)
-	gb.CPU.setFlagC(total > 0xFF) // If result is greater than 255
+	val1 := byte(cpu.a())
+
+	carry := int16(bits.B(cpu.flagC() && addCarry))
+	total := int16(val1) + int16(val2) + carry
+	cpu.setA(byte(total))
+
+	cpu.setFlagZ(byte(total) == 0)
+	cpu.setFlagN(false)
+	cpu.setFlagH((val2&0xF)+(val1&0xF)+byte(carry) > 0xF)
+	cpu.setFlagC(total > 0xFF) // If result is greater than 255
 }
 
-// Perform a SUB operation on the values (val1 - val2) and store the result using
-// the set function. Will also update the CPU flags using the result of the operation.
-func (gb *Gameboy) instSub(set func(byte), val1 byte, val2 byte, addCarry bool) {
-	carry := int16(bits.B(gb.CPU.flagC() && addCarry))
+// instSub performs a SUB instruction on the A register and another value and stores the result (A - value) in A.
+// It will also update the CPU flags using the result of the operation.
+func (cpu *CPU) instSub(val2 byte, addCarry bool) {
+
+	val1 := byte(cpu.a())
+
+	carry := int16(bits.B(cpu.flagC() && addCarry))
 	dirtySum := int16(val1) - int16(val2) - carry
 	total := byte(dirtySum)
-	set(total)
+	cpu.setA(total)
 
-	gb.CPU.setFlagZ(total == 0)
-	gb.CPU.setFlagN(true)
-	gb.CPU.setFlagH(int16(val1&0x0f)-int16(val2&0xF)-int16(carry) < 0)
-	gb.CPU.setFlagC(dirtySum < 0)
+	cpu.setFlagZ(total == 0)
+	cpu.setFlagN(true)
+	cpu.setFlagH(int16(val1&0x0f)-int16(val2&0xF)-int16(carry) < 0)
+	cpu.setFlagC(dirtySum < 0)
 }
 
 // Perform a AND operation on two values and store the result using the set function.
