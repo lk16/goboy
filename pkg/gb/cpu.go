@@ -5,11 +5,6 @@ package gb
 type register struct {
 	// The value of the register.
 	value uint
-
-	// A mask over the possible values in the register.
-	// Only used for the AF register where lower bits of
-	// F cannot be set.
-	mask uint
 }
 
 // Hi gets the higher byte of the register.
@@ -35,18 +30,11 @@ func (reg *register) sethi(val byte) {
 // setLog sets the lower byte of the register.
 func (reg *register) setLo(val byte) {
 	reg.value = uint(val) | (reg.value & 0xFF00)
-	reg.updateMask()
 }
 
 // set the value of the register.
 func (reg *register) set(val uint16) {
 	reg.value = uint(val)
-	reg.updateMask()
-}
-
-// Mask the value if one is set on this register.
-func (reg *register) updateMask() {
-	reg.value &= reg.mask
 }
 
 const (
@@ -79,12 +67,6 @@ func (cpu *CPU) Init(cgb bool) {
 	cpu.reg[regDE].set(0xFF56)
 	cpu.reg[regHL].set(0x000D)
 	cpu.reg[regSP].set(0xFFFE)
-
-	cpu.reg[regAF].mask = 0xFFF0
-	cpu.reg[regBC].mask = 0xFFFF
-	cpu.reg[regDE].mask = 0xFFFF
-	cpu.reg[regHL].mask = 0xFFFF
-	cpu.reg[regSP].mask = 0xFFFF
 }
 
 // Internally set the value of a flag on the flag register.
@@ -95,7 +77,6 @@ func (cpu *CPU) setFlag(index int, on bool) {
 	} else {
 		cpu.reg[regAF].value &^= mask
 	}
-	cpu.reg[regAF].updateMask()
 }
 
 func (cpu *CPU) getFlag(index int) bool {
@@ -127,13 +108,13 @@ func (cpu *CPU) b() byte    { return cpu.reg[regBC].hi() }
 func (cpu *CPU) c() byte    { return cpu.reg[regBC].lo() }
 func (cpu *CPU) d() byte    { return cpu.reg[regDE].hi() }
 func (cpu *CPU) e() byte    { return cpu.reg[regDE].lo() }
-func (cpu *CPU) f() byte    { return cpu.reg[regAF].lo() }
+func (cpu *CPU) f() byte    { return cpu.reg[regAF].lo() & 0xF0 }
 func (cpu *CPU) h() byte    { return cpu.reg[regHL].hi() }
 func (cpu *CPU) l() byte    { return cpu.reg[regHL].lo() }
 func (cpu *CPU) spHi() byte { return cpu.reg[regSP].hi() }
 func (cpu *CPU) spLo() byte { return cpu.reg[regSP].lo() }
 
-func (cpu *CPU) af() uint16 { return cpu.reg[regAF].hiLo() }
+func (cpu *CPU) af() uint16 { return cpu.reg[regAF].hiLo() & 0xFFF0 }
 func (cpu *CPU) bc() uint16 { return cpu.reg[regBC].hiLo() }
 func (cpu *CPU) de() uint16 { return cpu.reg[regDE].hiLo() }
 func (cpu *CPU) hl() uint16 { return cpu.reg[regHL].hiLo() }
