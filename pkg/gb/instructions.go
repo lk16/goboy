@@ -47,17 +47,20 @@ var CBOpcodeCycles = []int{
 func (gb *Gameboy) executeNextOpcode() int {
 	opcode := uint(gb.CPU.popPC(gb.Memory))
 	gb.thisCpuTicks = OpcodeCycles[opcode] * 4
-	executeInstruction(gb, gb.CPU, gb.Memory, opcode)
+	gb.executeInstruction(opcode)
 	return gb.thisCpuTicks
 }
 
-func executeInstruction(gb *Gameboy, cpu *CPU, mem *Memory, opcode uint) {
+func (gb *Gameboy) executeInstruction(opcode uint) {
 
 	opcode &= 0xFF
 
 	if opcode == 0x76 {
 		gb.halted = true
 	}
+
+	cpu := gb.CPU
+	mem := gb.Memory
 
 	switch opcode & 0xC0 {
 	case 0x40:
@@ -247,6 +250,42 @@ func executeInstruction(gb *Gameboy, cpu *CPU, mem *Memory, opcode uint) {
 		return
 	}
 
+	if opcode&0xCF == 0xC5 {
+
+		var val uint16
+
+		switch opcode {
+		case 0xC5:
+			val = cpu.bc()
+		case 0xD5:
+			val = cpu.de()
+		case 0xE5:
+			val = cpu.hl()
+		case 0xF5:
+			val = cpu.af()
+		}
+
+		cpu.pushStack(mem, val)
+		return
+	}
+
+	if opcode&0xCF == 0xC1 {
+
+		val := cpu.popStack(mem)
+
+		switch opcode {
+		case 0xC1:
+			cpu.setBc(val)
+		case 0xD1:
+			cpu.setDe(val)
+		case 0xE1:
+			cpu.setHl(val)
+		case 0xF1:
+			cpu.setAf(val)
+		}
+		return
+	}
+
 	switch opcode {
 
 	case 0xFA:
@@ -304,30 +343,7 @@ func executeInstruction(gb *Gameboy, cpu *CPU, mem *Memory, opcode uint) {
 		address := cpu.popPC16(mem)
 		mem.Write(address, cpu.spLo())
 		mem.Write(address+1, cpu.spHi())
-	case 0xF5:
-		// PUSH AF
-		cpu.pushStack(mem, cpu.af())
-	case 0xC5:
-		// PUSH BC
-		cpu.pushStack(mem, cpu.bc())
-	case 0xD5:
-		// PUSH DE
-		cpu.pushStack(mem, cpu.de())
-	case 0xE5:
-		// PUSH HL
-		cpu.pushStack(mem, cpu.hl())
-	case 0xF1:
-		// POP AF
-		cpu.setAf(cpu.popStack(mem))
-	case 0xC1:
-		// POP BC
-		cpu.setBc(cpu.popStack(mem))
-	case 0xD1:
-		// POP DE
-		cpu.setDe(cpu.popStack(mem))
-	case 0xE1:
-		// POP HL
-		cpu.setHl(cpu.popStack(mem))
+
 	// ========== 8-Bit ALU ===========
 
 	case 0x3C:
