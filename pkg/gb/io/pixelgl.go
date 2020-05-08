@@ -3,6 +3,7 @@ package io
 import (
 	"image/color"
 	"log"
+	"time"
 
 	"math"
 
@@ -11,13 +12,17 @@ import (
 	"github.com/faiface/pixel/pixelgl"
 )
 
+// minRenderInterval limits how many frames we render per second
+const minRenderInterval = time.Second / 60
+
 // PixelScale is the multiplier on the pixels on display
 var PixelScale float64 = 3
 
 // PixelsIOBinding binds screen output and input using the pixels library.
 type PixelsIOBinding struct {
-	window  *pixelgl.Window
-	picture *pixel.PictureData
+	window    *pixelgl.Window
+	picture   *pixel.PictureData
+	lastFrame time.Time
 }
 
 // NewPixelsIOBinding returns a new Pixelsgl IOBinding
@@ -76,16 +81,25 @@ func (mon *PixelsIOBinding) IsRunning() bool {
 // Render renders the pixels on the screen.
 func (mon *PixelsIOBinding) Render(frame *gb.Frame) {
 
-	mon.picture.Pix = frame[:]
+	if time.Since(mon.lastFrame) < minRenderInterval {
+		return
+	}
 
-	rgba := gb.GetPaletteColour(3)
-	mon.window.Clear(rgba)
+	mon.lastFrame = time.Now()
 
-	spr := pixel.NewSprite(mon.picture, pixel.R(0, 0, gb.ScreenWidth, gb.ScreenHeight))
-	spr.Draw(mon.window, pixel.IM)
+	go func() {
 
-	mon.updateCamera()
-	mon.window.Update()
+		mon.picture.Pix = frame[:]
+
+		rgba := gb.GetPaletteColour(3)
+		mon.window.Clear(rgba)
+
+		spr := pixel.NewSprite(mon.picture, pixel.R(0, 0, gb.ScreenWidth, gb.ScreenHeight))
+		spr.Draw(mon.window, pixel.IM)
+
+		mon.updateCamera()
+		mon.window.Update()
+	}()
 }
 
 // SetTitle sets the title of the game window.
