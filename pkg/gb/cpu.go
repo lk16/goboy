@@ -1,41 +1,13 @@
 package gb
 
-// Register represents a GB CPU 16bit register which provides functions
-// for setting and getting the higher and lower bytes.
-type register struct {
-	// The value of the register.
-	value uint
-}
+import "log"
 
-// Hi gets the higher byte of the register.
-func (reg *register) hi() byte {
-	return byte(reg.value >> 8)
-}
-
-// Lo gets the lower byte of the register.
-func (reg *register) lo() byte {
-	return byte(reg.value & 0xFF)
-}
-
-// HiLo gets the 2 byte value of the register.
-func (reg *register) hiLo() uint16 {
-	return uint16(reg.value)
-}
-
-// setHi sets the higher byte of the register.
-func (reg *register) sethi(val byte) {
-	reg.value = uint(val)<<8 | (reg.value & 0xFF)
-}
-
-// setLog sets the lower byte of the register.
-func (reg *register) setLo(val byte) {
-	reg.value = uint(val) | (reg.value & 0xFF00)
-}
-
-// set the value of the register.
-func (reg *register) set(val uint16) {
-	reg.value = uint(val)
-}
+const (
+	maskFlagC = 1 << 4
+	maskFlagH = 1 << 5
+	maskFlagN = 1 << 6
+	maskFlagZ = 1 << 7
+)
 
 const (
 	// these are register indexes
@@ -49,79 +21,134 @@ const (
 // CPU contains the registers used for program execution and
 // provides methods for setting flags.
 type CPU struct {
-	reg [5]register
-	PC  uint16
+	// registers
+	reg [5]uint
+	pc  uint
 
 	Divider int
 }
 
 // Init CPU and its registers to the initial values.
 func (cpu *CPU) Init(cgb bool) {
-	cpu.PC = 0x100
+	cpu.pc = 0x100
 	if cgb {
-		cpu.reg[regAF].set(0x1180)
+		cpu.setAf(0x1180)
 	} else {
-		cpu.reg[regAF].set(0x01B0)
+		cpu.setAf(0x01B0)
 	}
-	cpu.reg[regBC].set(0x0000)
-	cpu.reg[regDE].set(0xFF56)
-	cpu.reg[regHL].set(0x000D)
-	cpu.reg[regSP].set(0xFFFE)
+	cpu.setBc(0x0000)
+	cpu.setDe(0xFF56)
+	cpu.setHl(0x000D)
+	cpu.setSp(0xFFFE)
 }
 
 // Internally set the value of a flag on the flag register.
-func (cpu *CPU) setFlag(index int, on bool) {
-	mask := uint(1 << index)
+func (cpu *CPU) setFlag(mask uint, on bool) {
 	if on {
-		cpu.reg[regAF].value |= mask
+		cpu.reg[regAF] |= mask
 	} else {
-		cpu.reg[regAF].value &^= mask
+		cpu.reg[regAF] &^= mask
 	}
 }
 
 func (cpu *CPU) getFlag(index int) bool {
 	mask := uint(1 << index)
-	return cpu.reg[regAF].value&mask != 0
+	return cpu.reg[regAF]&mask != 0
 }
 
-func (cpu *CPU) setFlagC(on bool) { cpu.setFlag(4, on) }
-func (cpu *CPU) setFlagH(on bool) { cpu.setFlag(5, on) }
-func (cpu *CPU) setFlagN(on bool) { cpu.setFlag(6, on) }
-func (cpu *CPU) setFlagZ(on bool) { cpu.setFlag(7, on) }
+func (cpu *CPU) setFlagC(on bool) { cpu.setFlag(maskFlagC, on) }
+func (cpu *CPU) setFlagH(on bool) { cpu.setFlag(maskFlagH, on) }
+func (cpu *CPU) setFlagN(on bool) { cpu.setFlag(maskFlagN, on) }
+func (cpu *CPU) setFlagZ(on bool) { cpu.setFlag(maskFlagZ, on) }
 
-func (cpu *CPU) flagC() bool { return cpu.getFlag(4) }
-func (cpu *CPU) flagH() bool { return cpu.getFlag(5) }
-func (cpu *CPU) flagN() bool { return cpu.getFlag(6) }
-func (cpu *CPU) flagZ() bool { return cpu.getFlag(7) }
+func (cpu *CPU) flagC() bool { return cpu.reg[regAF]&maskFlagC != 0 }
+func (cpu *CPU) flagH() bool { return cpu.reg[regAF]&maskFlagH != 0 }
+func (cpu *CPU) flagN() bool { return cpu.reg[regAF]&maskFlagN != 0 }
+func (cpu *CPU) flagZ() bool { return cpu.reg[regAF]&maskFlagZ != 0 }
 
-func (cpu *CPU) setA(val byte) { cpu.reg[regAF].sethi(val) }
-func (cpu *CPU) setB(val byte) { cpu.reg[regBC].sethi(val) }
-func (cpu *CPU) setC(val byte) { cpu.reg[regBC].setLo(val) }
-func (cpu *CPU) setD(val byte) { cpu.reg[regDE].sethi(val) }
-func (cpu *CPU) setE(val byte) { cpu.reg[regDE].setLo(val) }
-func (cpu *CPU) setF(val byte) { cpu.reg[regAF].setLo(val) }
-func (cpu *CPU) setH(val byte) { cpu.reg[regHL].sethi(val) }
-func (cpu *CPU) setL(val byte) { cpu.reg[regHL].setLo(val) }
+func (cpu *CPU) carryBit() uint { return (cpu.reg[regAF] >> 4) & 0x1 }
 
-func (cpu *CPU) a() byte    { return cpu.reg[regAF].hi() }
-func (cpu *CPU) b() byte    { return cpu.reg[regBC].hi() }
-func (cpu *CPU) c() byte    { return cpu.reg[regBC].lo() }
-func (cpu *CPU) d() byte    { return cpu.reg[regDE].hi() }
-func (cpu *CPU) e() byte    { return cpu.reg[regDE].lo() }
-func (cpu *CPU) f() byte    { return cpu.reg[regAF].lo() & 0xF0 }
-func (cpu *CPU) h() byte    { return cpu.reg[regHL].hi() }
-func (cpu *CPU) l() byte    { return cpu.reg[regHL].lo() }
-func (cpu *CPU) spHi() byte { return cpu.reg[regSP].hi() }
-func (cpu *CPU) spLo() byte { return cpu.reg[regSP].lo() }
+// TODO move to test
+func panicIfNotByte(val uint) {
+	if val&^0xFF != 0 {
+		log.Panicf("error: attempt to write more than 8 bits: 0x%x", val)
+	}
+}
 
-func (cpu *CPU) af() uint16 { return cpu.reg[regAF].hiLo() & 0xFFF0 }
-func (cpu *CPU) bc() uint16 { return cpu.reg[regBC].hiLo() }
-func (cpu *CPU) de() uint16 { return cpu.reg[regDE].hiLo() }
-func (cpu *CPU) hl() uint16 { return cpu.reg[regHL].hiLo() }
-func (cpu *CPU) sp() uint16 { return cpu.reg[regSP].hiLo() }
+// TODO move to test
+func panicIfNotUint16(val uint) {
+	if val&^0xFFFF != 0 {
+		log.Panicf("error: attempt to write more than 16 bits: 0x%x", val)
+	}
+}
 
-func (cpu *CPU) setAf(val uint16) { cpu.reg[regAF].set(val) }
-func (cpu *CPU) setBc(val uint16) { cpu.reg[regBC].set(val) }
-func (cpu *CPU) setDe(val uint16) { cpu.reg[regDE].set(val) }
-func (cpu *CPU) setHl(val uint16) { cpu.reg[regHL].set(val) }
-func (cpu *CPU) setSp(val uint16) { cpu.reg[regSP].set(val) }
+func (cpu *CPU) setA(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regAF] &= 0xFF
+	cpu.reg[regAF] |= val << 8
+}
+
+func (cpu *CPU) setB(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regBC] &= 0xFF
+	cpu.reg[regBC] |= val << 8
+}
+
+func (cpu *CPU) setC(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regBC] &= 0xFF00
+	cpu.reg[regBC] |= val
+}
+
+func (cpu *CPU) setD(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regDE] &= 0xFF
+	cpu.reg[regDE] |= val << 8
+}
+
+func (cpu *CPU) setE(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regDE] &= 0xFF00
+	cpu.reg[regDE] |= val
+}
+
+func (cpu *CPU) setF(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regAF] &= 0xFF00
+	cpu.reg[regAF] |= val
+}
+
+func (cpu *CPU) setH(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regHL] &= 0xFF
+	cpu.reg[regHL] |= val << 8
+}
+
+func (cpu *CPU) setL(val uint) {
+	panicIfNotByte(val)
+	cpu.reg[regHL] &= 0xFF00
+	cpu.reg[regHL] |= val
+}
+
+func (cpu *CPU) a() uint    { return (cpu.reg[regAF] >> 8) & 0xFF }
+func (cpu *CPU) b() uint    { return cpu.reg[regBC] >> 8 }
+func (cpu *CPU) c() uint    { return cpu.reg[regBC] & 0xFF }
+func (cpu *CPU) d() uint    { return cpu.reg[regDE] >> 8 }
+func (cpu *CPU) e() uint    { return cpu.reg[regDE] & 0xFF }
+func (cpu *CPU) f() uint    { return cpu.reg[regAF] & 0xF0 } // mask out low F-nibble
+func (cpu *CPU) h() uint    { return cpu.reg[regHL] >> 8 }
+func (cpu *CPU) l() uint    { return cpu.reg[regHL] & 0xFF }
+func (cpu *CPU) spHi() uint { return cpu.reg[regSP] >> 8 }
+func (cpu *CPU) spLo() uint { return cpu.reg[regSP] & 0xFF }
+
+func (cpu *CPU) af() uint { return cpu.reg[regAF] & 0xFFF0 } // mask out low F-nibble
+func (cpu *CPU) bc() uint { return cpu.reg[regBC] }
+func (cpu *CPU) de() uint { return cpu.reg[regDE] }
+func (cpu *CPU) hl() uint { return cpu.reg[regHL] }
+func (cpu *CPU) sp() uint { return cpu.reg[regSP] }
+
+func (cpu *CPU) setAf(val uint) { panicIfNotUint16(val); cpu.reg[regAF] = val }
+func (cpu *CPU) setBc(val uint) { panicIfNotUint16(val); cpu.reg[regBC] = val }
+func (cpu *CPU) setDe(val uint) { panicIfNotUint16(val); cpu.reg[regDE] = val }
+func (cpu *CPU) setHl(val uint) { panicIfNotUint16(val); cpu.reg[regHL] = val }
+func (cpu *CPU) setSp(val uint) { panicIfNotUint16(val); cpu.reg[regSP] = val }

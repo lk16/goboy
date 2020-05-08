@@ -120,7 +120,7 @@ func (mem *Memory) WriteHighRam(address uint16, value byte) {
 		if value == 0x81 {
 			f := mem.gb.options.transferFunction
 			if f != nil {
-				f(mem.ReadHighRam(0xFF01))
+				f(byte(mem.ReadHighRam(0xFF01)))
 			}
 		}
 
@@ -264,9 +264,9 @@ func (mem *Memory) Write(address uint16, value byte) {
 
 // Read from memory. Will go and read from cartridge memory if the
 // requested address is mapped to that space.
-func (mem *Memory) Read(address uint16) byte {
+func (mem *Memory) Read(address uint) uint {
 
-	highNibble := address >> 12
+	highNibble := (address >> 12) & 0xF
 
 	switch highNibble {
 	case 0x0:
@@ -285,25 +285,25 @@ func (mem *Memory) Read(address uint16) byte {
 		fallthrough
 	case 0x7:
 		// Cartridge ROM
-		return mem.Cart.Read(address)
+		return uint(mem.Cart.Read(uint16(address)))
 	case 0x8:
 		fallthrough
 	case 0x9:
 		// VRAM Banking
 		// TODO: check this is correct
-		bankOffset := uint16(mem.VRAMBank) * 0x2000
-		return mem.VRAM[address-0x8000+bankOffset]
+		bankOffset := uint(mem.VRAMBank) * 0x2000
+		return uint(mem.VRAM[address-0x8000+bankOffset])
 	case 0xA:
 		fallthrough
 	case 0xB:
 		// Cartridge RAM
-		return mem.Cart.Read(address)
+		return uint(mem.Cart.Read(uint16(address)))
 	case 0xC:
 		// Internal RAM - Bank 0
-		return mem.WRAM[address-0xC000]
+		return uint(mem.WRAM[address-0xC000])
 	case 0xD:
 		// Internal RAM Bank 1-7
-		return mem.WRAM[(address-0xC000)+(uint16(mem.WRAMBank)*0x1000)]
+		return uint(mem.WRAM[(address-0xC000)+(uint(mem.WRAMBank)*0x1000)])
 	}
 
 	switch {
@@ -316,36 +316,36 @@ func (mem *Memory) Read(address uint16) byte {
 
 	case address < 0xFEA0:
 		// Object Attribute Memory
-		return mem.OAM[address-0xFE00]
+		return uint(mem.OAM[address-0xFE00])
 
 	case address < 0xFF00:
 		// Unusable memory
 		return 0xFF
 
 	default:
-		return mem.ReadHighRam(address)
+		return mem.ReadHighRam(uint(address))
 	}
 }
 
 // ReadHighRam reads from 0xFF00-0xFFFF in the memory address space. The range
 // includes both HRAM and the hardware registers.
-func (mem *Memory) ReadHighRam(address uint16) byte {
+func (mem *Memory) ReadHighRam(address uint) uint {
 
-	highByte := byte(address & 0xFF)
+	lowByte := address & 0xFF
 
-	if highByte&0x80 != 0 {
-		return mem.HighRAM[highByte]
+	if lowByte&0x80 != 0 {
+		return uint(mem.HighRAM[lowByte])
 	}
 
-	switch highByte {
+	switch lowByte {
 	case 0x00:
-		return mem.gb.joypadValue(mem.HighRAM[0x00])
+		return uint(mem.gb.joypadValue(mem.HighRAM[0x00]))
 	case 0x04:
 		fallthrough
 	case 0x07:
-		return mem.HighRAM[highByte]
+		return uint(mem.HighRAM[lowByte])
 	case 0x0F:
-		return mem.HighRAM[0x0F] | 0xE0
+		return uint(mem.HighRAM[0x0F]) | 0xE0
 	case 0x40:
 		fallthrough
 	case 0x41:
@@ -369,61 +369,60 @@ func (mem *Memory) ReadHighRam(address uint16) byte {
 	case 0x4A:
 		fallthrough
 	case 0x4B:
-		return mem.HighRAM[highByte]
+		return uint(mem.HighRAM[lowByte])
 	case 0x4D:
-		return mem.gb.currentSpeed<<7 | bits.B(mem.gb.prepareSpeed)
+		return uint(mem.gb.currentSpeed<<7 | bits.B(mem.gb.prepareSpeed))
 	case 0x4F:
-		return mem.VRAMBank
+		return uint(mem.VRAMBank)
 	case 0x68: // BG palette index
 		if mem.gb.IsCGB() {
-			return mem.gb.BGPalette.readIndex()
+			return uint(mem.gb.BGPalette.readIndex())
 		}
 		return 0
 	case 0x69: // BG Palette data
 		if mem.gb.IsCGB() {
-			return mem.gb.BGPalette.read()
+			return uint(mem.gb.BGPalette.read())
 		}
 		return 0
 	case 0x6A: // Sprite palette index
 		if mem.gb.IsCGB() {
-			return mem.gb.SpritePalette.readIndex()
+			return uint(mem.gb.SpritePalette.readIndex())
 		}
 		return 0
 	case 0x6B: // Sprite Palette data
 		if mem.gb.IsCGB() {
-			return mem.gb.SpritePalette.read()
+			return uint(mem.gb.SpritePalette.read())
 		}
 		return 0
 	case 0x70:
-		return mem.WRAMBank
+		return uint(mem.WRAMBank)
 	}
 
 	switch {
 	case address >= 0xFF10 && address <= 0xFF26:
-		return mem.gb.Sound.Read(address)
+		return uint(mem.gb.Sound.Read(uint16(address)))
 
 	case address >= 0xFF30 && address <= 0xFF3F:
 		// Writing to channel 3 waveform RAM.
-		return mem.gb.Sound.Read(address)
+		return uint(mem.gb.Sound.Read(uint16(address)))
 
 	case address >= 0xFF72 && address <= 0xFF77:
 		//log.Print("read from ", address)
 		return 0
 
 	default:
-		return mem.HighRAM[address-0xFF00]
+		return uint(mem.HighRAM[address-0xFF00])
 	}
 }
 
 // Perform a DMA transfer.
 func (mem *Memory) doDMATransfer(value byte) {
 	// TODO: This may need to be done instead of CPU ticks
-	address := uint16(value) << 8 // (data * 100)
+	address := uint(value) << 8 // (data * 100)
 
-	var i uint16
-	for i = 0; i < 0xA0; i++ {
+	for i := uint(0); i < 0xA0; i++ {
 		// TODO: Check this doesn't prevent
-		mem.Write(0xFE00+i, mem.Read(address+i))
+		mem.Write(0xFE00+uint16(i), byte(mem.Read(address+i)))
 	}
 }
 
@@ -470,13 +469,13 @@ func (mem *Memory) doHDMATransfer() {
 // Transfer a set amount of DMA data based on the current register values.
 func (mem *Memory) performNewDMATransfer(length uint16) {
 	// Load the source and destination from RAM
-	source := (uint16(mem.HighRAM[0x51])<<8 | uint16(mem.HighRAM[0x52])) & 0xFFF0
+	source := (uint(mem.HighRAM[0x51])<<8 | uint(mem.HighRAM[0x52])) & 0xFFF0
 	destination := (uint16(mem.HighRAM[0x53])<<8 | uint16(mem.HighRAM[0x54])) & 0x1FF0
 	destination += 0x8000
 
 	// Transfer the data from the source to the destination
 	for i := uint16(0); i < length; i++ {
-		mem.Write(destination, mem.Read(source))
+		mem.Write(destination, byte(mem.Read(source)))
 		destination++
 		source++
 	}

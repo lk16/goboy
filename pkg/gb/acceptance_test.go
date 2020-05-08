@@ -35,9 +35,12 @@ func _TestAcceptance(t *testing.T) {
 }
 
 func inFinishLoop(gb *Gameboy) bool {
-	return gb.Memory.Read(gb.CPU.PC) == 0x00 &&
-		gb.Memory.Read(gb.CPU.PC+1) == 0x18 &&
-		gb.Memory.Read(gb.CPU.PC+2) == 0xFD
+
+	pc := gb.CPU.pc
+
+	return gb.Memory.Read(pc) == 0x00 &&
+		gb.Memory.Read(pc+1) == 0x18 &&
+		gb.Memory.Read(pc+2) == 0xFD
 }
 
 func passedTest(gb *Gameboy) bool {

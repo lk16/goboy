@@ -49,8 +49,6 @@ type Gameboy struct {
 	interruptsOn       bool
 	halted             bool
 
-	cbInst [0x100]func()
-
 	// Mask of the currently pressed buttons.
 	inputMask byte
 
@@ -116,9 +114,9 @@ func (gb *Gameboy) SoundString() {
 // BGMapString returns a string of the values in the background map.
 func (gb *Gameboy) BGMapString() string {
 	out := ""
-	for y := uint16(0); y < 0x20; y++ {
+	for y := uint(0); y < 0x20; y++ {
 		out += fmt.Sprintf("%2x: ", y)
-		for x := uint16(0); x < 0x20; x++ {
+		for x := uint(0); x < 0x20; x++ {
 			out += fmt.Sprintf("%2x ", gb.Memory.Read(0x9800+(y*0x20)+x))
 		}
 		out += "\n"
@@ -159,21 +157,21 @@ func (gb *Gameboy) updateTimers(cycles int) {
 			gb.timerCounter -= freq
 			tima := gb.Memory.Read(TIMA)
 			if tima == 0xFF {
-				gb.Memory.HighRAM[TIMA-0xFF00] = gb.Memory.Read(TMA)
+				gb.Memory.HighRAM[TIMA-0xFF00] = byte(gb.Memory.Read(TMA))
 				gb.requestInterrupt(2)
 			} else {
-				gb.Memory.HighRAM[TIMA-0xFF00] = tima + 1
+				gb.Memory.HighRAM[TIMA-0xFF00] = byte(tima + 1)
 			}
 		}
 	}
 }
 
 func (gb *Gameboy) isClockEnabled() bool {
-	return bits.Test(gb.Memory.Read(TAC), 2)
+	return bits.Test(byte(gb.Memory.Read(TAC)), 2)
 }
 
 func (gb *Gameboy) getClockFreq() byte {
-	return gb.Memory.Read(TAC) & 0x3
+	return byte(gb.Memory.Read(TAC)) & 0x3
 }
 
 func (gb *Gameboy) getClockFreqCount() int {
@@ -203,7 +201,7 @@ func (gb *Gameboy) dividerRegister(cycles int) {
 
 // Request the Gameboy to perform an interrupt.
 func (gb *Gameboy) requestInterrupt(interrupt byte) {
-	req := gb.Memory.ReadHighRam(0xFF0F)
+	req := byte(gb.Memory.ReadHighRam(0xFF0F))
 	req = bits.Set(req, interrupt)
 	gb.Memory.Write(0xFF0F, req)
 }
@@ -218,8 +216,8 @@ func (gb *Gameboy) doInterrupts() (cycles int) {
 		return 0
 	}
 
-	req := gb.Memory.ReadHighRam(0xFF0F)
-	enabled := gb.Memory.ReadHighRam(0xFFFF)
+	req := byte(gb.Memory.ReadHighRam(0xFF0F))
+	enabled := byte(gb.Memory.ReadHighRam(0xFFFF))
 
 	if req > 0 {
 		var i byte
@@ -253,12 +251,12 @@ func (gb *Gameboy) serviceInterrupt(interrupt byte) {
 	gb.interruptsOn = false
 	gb.halted = false
 
-	req := gb.Memory.ReadHighRam(0xFF0F)
+	req := byte(gb.Memory.ReadHighRam(0xFF0F))
 	req = bits.Reset(req, interrupt)
 	gb.Memory.Write(0xFF0F, req)
 
-	gb.pushStack(gb.CPU.PC)
-	gb.CPU.PC = interruptAddresses[interrupt]
+	gb.pushStack(uint16(gb.CPU.pc))
+	gb.CPU.pc = uint(interruptAddresses[interrupt])
 }
 
 // Push a 16 bit value onto the stack and decrement SP.
@@ -335,8 +333,6 @@ func (gb *Gameboy) setup() {
 	gb.Debug = DebugFlags{}
 	gb.scanlineCounter = 456
 	gb.inputMask = 0xFF
-
-	gb.cbInst = gb.cbInstructions()
 
 	gb.SpritePalette = NewPalette()
 	gb.BGPalette = NewPalette()
