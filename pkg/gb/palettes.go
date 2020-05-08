@@ -47,7 +47,7 @@ var Palettes = [][]color.RGBA{
 
 // GetPaletteColour returns the colour based on the colour index and the currently
 // selected palette.
-func GetPaletteColour(index byte) color.RGBA {
+func GetPaletteColour(index uint) color.RGBA {
 	return Palettes[CurrentPalette][index]
 }
 
@@ -101,9 +101,9 @@ func (pal *cgbPalette) write(value byte) {
 }
 
 // Get the rgba colour for a palette at a colour number.
-func (pal *cgbPalette) get(palette byte, num byte) color.RGBA {
-	idx := (palette * 8) + (num * 2)
-	colour := uint16(pal.Palette[idx]) | uint16(pal.Palette[idx+1])<<8
+func (pal *cgbPalette) get(palette, num uint) color.RGBA {
+	idx := (palette << 3) | (num << 1)
+	colour := uint(pal.Palette[idx]) | uint(pal.Palette[idx+1])<<8
 
 	r := colour & 0x1F
 	g := (colour >> 5) & 0x1F

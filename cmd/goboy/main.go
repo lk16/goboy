@@ -150,7 +150,7 @@ func startGBLoop(gameboy *gb.Gameboy, monitor gb.IOBinding) {
 
 		if time.Since(lastStats) > logInterval {
 			fps := float64(frames-lastStatsFrames) / logInterval.Seconds()
-			title := fmt.Sprintf("GoBoy - %s (FPS: %d)", cartName, int(fps))
+			title := fmt.Sprintf("GoBoy - %s (%d fps)", cartName, int(fps))
 			monitor.SetTitle(title)
 
 			if *logfps {

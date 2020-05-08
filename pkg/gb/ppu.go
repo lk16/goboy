@@ -22,6 +22,10 @@ type Frame [ScreenHeight * ScreenWidth]color.RGBA
 // Update the state of the graphics.
 func (gb *Gameboy) updateGraphics(cycles int) {
 
+	if !gb.options.graphics {
+		return
+	}
+
 	lcdEnabled := gb.isLCDEnabled()
 
 	gb.setLCDStatus(lcdEnabled)
@@ -271,7 +275,7 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 		// Set the pixel
 		if gb.IsCGB() {
 			cgbPalette := tileAttr & 0x7
-			rgba := gb.BGPalette.get(cgbPalette, colourNum)
+			rgba := gb.BGPalette.get(uint(cgbPalette), uint(colourNum))
 			gb.setPixel(pixelIndex, rgba, true)
 			gb.bgPriority[pixelIndex] = priority
 		} else {
@@ -288,7 +292,7 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 func (gb *Gameboy) getColour(colourNum byte, palette byte) color.RGBA {
 	hi := colourNum<<1 | 1
 	lo := colourNum << 1
-	col := (bits.Val(palette, hi) << 1) | bits.Val(palette, lo)
+	col := uint((bits.Val(palette, hi) << 1) | bits.Val(palette, lo))
 	return GetPaletteColour(col)
 }
 
@@ -379,7 +383,7 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 
 			if gb.IsCGB() {
 				cgbPalette := attributes & 0x7
-				rgba := gb.SpritePalette.get(cgbPalette, colourNum)
+				rgba := gb.SpritePalette.get(uint(cgbPalette), uint(colourNum))
 				gb.setPixel((ScreenWidth*int(scanline))+int(pixel), rgba, priority)
 			} else {
 				// Determine the colour palette to use

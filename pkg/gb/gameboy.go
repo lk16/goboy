@@ -85,9 +85,7 @@ func (gb *Gameboy) Update() int {
 		}
 		cycles += cyclesOp
 
-		if gb.options.graphics {
-			gb.updateGraphics(cyclesOp)
-		}
+		gb.updateGraphics(cyclesOp)
 
 		gb.updateTimers(cyclesOp)
 		cycles += gb.doInterrupts()
