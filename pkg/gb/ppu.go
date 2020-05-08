@@ -21,9 +21,12 @@ type Frame [ScreenHeight * ScreenWidth]color.RGBA
 
 // Update the state of the graphics.
 func (gb *Gameboy) updateGraphics(cycles int) {
-	gb.setLCDStatus()
 
-	if !gb.isLCDEnabled() {
+	lcdEnabled := gb.isLCDEnabled()
+
+	gb.setLCDStatus(lcdEnabled)
+
+	if !lcdEnabled {
 		return
 	}
 	gb.scanlineCounter -= cycles
@@ -52,10 +55,10 @@ const (
 )
 
 // Set the status of the LCD based on the current state of memory.
-func (gb *Gameboy) setLCDStatus() {
+func (gb *Gameboy) setLCDStatus(lcdEnabled bool) {
 	status := byte(gb.Memory.ReadHighRam(0xFF41))
 
-	if !gb.isLCDEnabled() {
+	if !lcdEnabled {
 		// set the screen to white
 		gb.clearScreen()
 
