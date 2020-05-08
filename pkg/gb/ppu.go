@@ -194,6 +194,8 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 	windowY := byte(gb.Memory.ReadHighRam(0xFF4A))
 	windowX := byte(gb.Memory.ReadHighRam(0xFF4B) - 7)
 
+	isCGB := gb.IsCGB()
+
 	usingWindow, unsigned, tileData, backgroundMemory := gb.getTileSettings(lcdControl, windowY)
 
 	// yPos is used to calc which of 32 v-lines the current scanline is drawing
@@ -246,53 +248,53 @@ func (gb *Gameboy) renderTiles(lcdControl byte, scanline int) {
 		//    Bit 6    Vertical Flip              (0=Normal, 1=Mirror vertically)
 		//    Bit 7    BG-to-OAM Priority         (0=Use OAM priority bit, 1=BG Priority)
 		//
-		tileAttr := gb.Memory.VRAM[tileAddress-0x6000]
-		if gb.IsCGB() && bits.Test(tileAttr, 3) {
+		tileAttr := uint(gb.Memory.VRAM[tileAddress-0x6000])
+		if isCGB && (tileAttr&(1<<3) != 0) {
 			bankOffset = 0x6000
 		}
-		priority := bits.Test(tileAttr, 7)
+		priority := tileAttr&(1<<7) != 0
 
-		var line byte
-		if gb.IsCGB() && bits.Test(tileAttr, 6) {
+		var line uint
+		if isCGB && (tileAttr&(1<<6) != 0) {
 			// Vertical flip
-			line = ((7 - yPos) % 8) * 2
+			line = ((7 - uint(yPos)) % 8) * 2
 		} else {
-			line = (yPos % 8) * 2
+			line = (uint(yPos) % 8) * 2
 		}
 		// Get the tile data from memory
-		data1 := gb.Memory.VRAM[tileLocation+uint16(line)-bankOffset]
-		data2 := gb.Memory.VRAM[tileLocation+uint16(line)+1-bankOffset]
+		data1 := uint(gb.Memory.VRAM[tileLocation+uint16(line)-bankOffset])
+		data2 := uint(gb.Memory.VRAM[tileLocation+uint16(line)+1-bankOffset])
 
-		if gb.IsCGB() && bits.Test(tileAttr, 5) {
+		if isCGB && (tileAttr&(1<<5) != 0) {
 			// Horizontal flip
 			xPos = 7 - xPos
 		}
-		colourBit := byte(int8((xPos%8)-7) * -1)
-		colourNum := (bits.Val(data2, colourBit) << 1) | bits.Val(data1, colourBit)
+		colourBit := uint(int8((xPos%8)-7) * -1)
+		colourNum := (((data2 >> colourBit) & 1) << 1) | ((data1 >> colourBit) & 1)
 
 		pixelIndex := scanline*ScreenWidth + pixel
 
 		// Set the pixel
-		if gb.IsCGB() {
+		if isCGB {
 			cgbPalette := tileAttr & 0x7
-			rgba := gb.BGPalette.get(uint(cgbPalette), uint(colourNum))
+			rgba := gb.BGPalette.get(cgbPalette, uint(colourNum))
 			gb.setPixel(pixelIndex, rgba, true)
 			gb.bgPriority[pixelIndex] = priority
 		} else {
-			rgba := gb.getColour(colourNum, palette)
+			rgba := gb.getColour(colourNum, uint(palette))
 			gb.setPixel(pixelIndex, rgba, true)
 		}
 
 		// Store for the current scanline so sprite priority can be managed
-		gb.tileScanline[pixel] = colourNum
+		gb.tileScanline[pixel] = byte(colourNum)
 	}
 }
 
-// Get the RGB colour value for a colour num at an address using the current palette.
-func (gb *Gameboy) getColour(colourNum byte, palette byte) color.RGBA {
+// Get the RGBA colour value for a colour num at an address using the current palette.
+func (gb *Gameboy) getColour(colourNum, palette uint) color.RGBA {
 	hi := colourNum<<1 | 1
 	lo := colourNum << 1
-	col := uint((bits.Val(palette, hi) << 1) | bits.Val(palette, lo))
+	col := uint((((palette >> hi) & 1) << 1) | ((palette >> lo) & 1))
 	return GetPaletteColour(col)
 }
 
@@ -391,7 +393,7 @@ func (gb *Gameboy) renderSprites(lcdControl byte, scanline int32) {
 				if bits.Test(attributes, 4) {
 					palette = palette2
 				}
-				rgba := gb.getColour(colourNum, palette)
+				rgba := gb.getColour(uint(colourNum), uint(palette))
 				gb.setPixel((ScreenWidth*int(scanline))+int(pixel), rgba, priority)
 			}
 
